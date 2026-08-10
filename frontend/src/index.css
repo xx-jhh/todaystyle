@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+/* 디자인 토큰 — 인스타 무드(화이트/오프화이트 배경, 블랙/다크그레이 텍스트) + 포인트 컬러 코발트 */
+@theme {
+  --color-ink: #17171a; /* 본문/제목 (거의 블랙) */
+  --color-ink-soft: #6b6f76; /* 보조 텍스트 (다크그레이) */
+  --color-paper: #ffffff; /* 카드/헤더 배경 */
+  --color-canvas: #f6f6f4; /* 앱 바탕 (오프화이트) */
+  --color-line: #ececec; /* 얇은 구분선 */
+
+  /* 포인트 컬러: 코발트 */
+  --color-accent: #3b6ef6;
+  --color-accent-strong: #2a5be0;
+  --color-accent-soft: #eef2ff;
+
+  --font-sans: 'Pretendard', ui-sans-serif, system-ui, 'Apple SD Gothic Neo',
+    'Segoe UI', Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 모바일에서 스크롤바가 레이아웃을 흔들지 않도록 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-xl border border-line bg-paper px-4 py-3 text-base text-ink outline-none transition-colors;
+  }
+  .input:focus {
+    @apply border-accent ring-2 ring-accent/20;
+  }
+}

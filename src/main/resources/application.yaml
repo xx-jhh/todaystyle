@@ -24,3 +24,9 @@ jwt:
   secret: ${JWT_SECRET:todaystyle-local-dev-secret-key-change-me-please-32bytes}
   # 액세스 토큰 만료 시간 (밀리초). 기본 24시간.
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+kma:
+  # 기상청 단기예보 조회서비스 (공공데이터포털). 서비스키 미발급 상태여도 앱은 정상 부팅되며,
+  # 실제 날씨 조회 시점에만 필요. 공공데이터포털에서 발급받은 "일반 인증키(Decoding)"를 넣을 것.
+  base-url: http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0
+  service-key: ${KMA_SERVICE_KEY:}

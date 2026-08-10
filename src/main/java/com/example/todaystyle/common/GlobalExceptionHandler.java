@@ -5,6 +5,7 @@ import com.example.todaystyle.ootd.OotdAlreadyExistsException;
 import com.example.todaystyle.ootd.OotdNotFoundException;
 import com.example.todaystyle.user.DuplicateEmailException;
 import com.example.todaystyle.user.InvalidCredentialsException;
+import com.example.todaystyle.weather.WeatherUnavailableException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,6 +47,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ImageUploadException.class)
     public ResponseEntity<Map<String, Object>> handleImageUpload(ImageUploadException e) {
         return build(HttpStatus.BAD_GATEWAY, e.getMessage());
+    }
+
+    @ExceptionHandler(WeatherUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleWeatherUnavailable(WeatherUnavailableException e) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
