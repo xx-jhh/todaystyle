@@ -1,4 +1,4 @@
-import { LogOut, Settings, Shirt, Sparkles } from 'lucide-react'
+import { LogOut, Ruler, Settings, Shirt, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
@@ -43,7 +43,18 @@ export function MyPage() {
       {/* 메뉴 */}
       <ul className="mt-6 overflow-hidden rounded-2xl border border-line bg-paper">
         <li>
-          <button className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm hover:bg-canvas">
+          <button
+            onClick={() => navigate('/me/body')}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm hover:bg-canvas"
+          >
+            <Ruler size={18} className="text-ink-soft" /> 신체 정보 수정
+          </button>
+        </li>
+        <li className="border-t border-line">
+          <button
+            onClick={() => navigate('/recommendations')}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm hover:bg-canvas"
+          >
             <Sparkles size={18} className="text-ink-soft" /> 코디 조합 추천 받기
           </button>
         </li>

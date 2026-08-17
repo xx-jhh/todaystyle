@@ -16,19 +16,22 @@ export function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [weather, setWeather] = useState<EntryWeather | null>(null)
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const today = todayIso()
 
-  // 오늘 날씨를 불러와 업로드 화면에 함께 노출
+  // 오늘 날씨를 불러와 업로드 화면에 함께 노출 (같은 좌표를 제출 시 백엔드에도 전달)
   useEffect(() => {
     let cancelled = false
-    const load = (lat: number, lon: number) =>
-      getWeather(lat, lon)
+    const load = (lat: number, lon: number) => {
+      setLocation({ lat, lon })
+      return getWeather(lat, lon)
         .then((w) => {
           if (!cancelled) setWeather({ temp: w.currentTemp, sky: w.sky, precipitation: w.precipitation })
         })
         .catch(() => {})
+    }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => void load(pos.coords.latitude, pos.coords.longitude),
@@ -66,7 +69,7 @@ export function UploadPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const created = await uploadOotd(today, file)
+      const created = await uploadOotd(today, file, location ?? undefined)
       navigate(`/ootd/${created.id}`, { replace: true })
     } catch (err) {
       // Cloudinary 미설정 시 502가 날 수 있음 — 사용자에게 명확히 안내

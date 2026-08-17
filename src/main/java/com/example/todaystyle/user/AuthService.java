@@ -4,6 +4,8 @@ import com.example.todaystyle.security.JwtTokenProvider;
 import com.example.todaystyle.user.dto.LoginRequest;
 import com.example.todaystyle.user.dto.SignUpRequest;
 import com.example.todaystyle.user.dto.TokenResponse;
+import com.example.todaystyle.user.dto.UpdateBodyMeasurementsRequest;
+import com.example.todaystyle.user.dto.UserResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +53,16 @@ public class AuthService {
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
                 .orElseThrow(InvalidCredentialsException::new);
         return issueToken(user);
+    }
+
+    /** 마이페이지에서 신체 치수를 수정한다. 필드를 비우면(null) 해당 값이 지워진다. */
+    @Transactional
+    public UserResponse updateBodyMeasurements(Long userId, UpdateBodyMeasurementsRequest request) {
+        User user = userRepository.findById(userId).orElseThrow(InvalidCredentialsException::new);
+        user.setHeight(request.height());
+        user.setWeight(request.weight());
+        user.setWaistInch(request.waistInch());
+        return UserResponse.from(user);
     }
 
     private TokenResponse issueToken(User user) {

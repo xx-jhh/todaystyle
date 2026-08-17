@@ -14,11 +14,12 @@ import java.util.Set;
 public final class BodyTypeStyleRules {
 
     private static final Map<BodyType, Set<Fit>> RECOMMENDED_FITS = Map.of(
-            BodyType.SLIM, EnumSet.of(Fit.LOOSE, Fit.OVERSIZED),
-            BodyType.STANDARD, EnumSet.of(Fit.REGULAR, Fit.SLIM),
-            BodyType.ATHLETIC, EnumSet.of(Fit.REGULAR, Fit.LOOSE),
-            BodyType.CHUBBY, EnumSet.of(Fit.REGULAR, Fit.LOOSE),
-            BodyType.TALL_SLIM, EnumSet.of(Fit.SLIM, Fit.REGULAR)
+            // 상체에 입체감·두께가 있어 과한 루즈/오버사이즈보다 정돈된 핏이 잘 어울림.
+            BodyType.STRAIGHT, EnumSet.of(Fit.REGULAR, Fit.SLIM),
+            // 부드럽고 잘록한 라인이 사는 몸에 붙는 핏이 잘 어울림.
+            BodyType.WAVE, EnumSet.of(Fit.SLIM, Fit.REGULAR),
+            // 골격이 크고 마디가 있어 루즈/오버사이즈 캐주얼이 잘 받는 편.
+            BodyType.NATURAL, EnumSet.of(Fit.LOOSE, Fit.OVERSIZED)
     );
 
     private BodyTypeStyleRules() {

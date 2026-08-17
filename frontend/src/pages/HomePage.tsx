@@ -28,6 +28,7 @@ export function HomePage() {
               id: o.id,
               recordDate: o.recordDate,
               photoUrl: o.photoUrl,
+              weather: o.weather,
             })),
           )
         }

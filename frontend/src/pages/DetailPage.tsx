@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Sparkles } from 'lucide-react'
+import { ChevronLeft, Pencil, Sparkles } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { getOotd } from '../api/ootd'
+import { getOotd, updateOotdMemo } from '../api/ootd'
 import type { DiaryEntry } from '../api/types'
 import { WeatherBadge } from '../components/WeatherBadge'
 import { formatLongDate } from '../lib/format'
@@ -14,11 +14,18 @@ export function DetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [editing, setEditing] = useState(false)
+  const [memoDraft, setMemoDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [memoError, setMemoError] = useState<string | null>(null)
+
   useEffect(() => {
     let cancelled = false
     getOotd(Number(id))
       .then((o) => {
-        if (!cancelled) setEntry({ id: o.id, recordDate: o.recordDate, photoUrl: o.photoUrl })
+        if (!cancelled) {
+          setEntry({ id: o.id, recordDate: o.recordDate, photoUrl: o.photoUrl, weather: o.weather, memo: o.memo })
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof ApiError ? err.message : '기록을 불러오지 못했습니다.')
@@ -30,6 +37,27 @@ export function DetailPage() {
       cancelled = true
     }
   }, [id])
+
+  function startEditing() {
+    setMemoDraft(entry?.memo ?? '')
+    setMemoError(null)
+    setEditing(true)
+  }
+
+  async function saveMemo() {
+    if (!entry) return
+    setSaving(true)
+    setMemoError(null)
+    try {
+      const updated = await updateOotdMemo(entry.id, memoDraft)
+      setEntry({ ...entry, memo: updated.memo })
+      setEditing(false)
+    } catch (err) {
+      setMemoError(err instanceof ApiError ? err.message : '메모 저장에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div>
@@ -70,12 +98,58 @@ export function DetailPage() {
             </h1>
 
             <div className="mt-4 rounded-2xl border border-line bg-paper p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-accent">
-                <Sparkles size={16} /> 코디 메모
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+                  <Sparkles size={16} /> 코디 메모
+                </div>
+                {!editing && (
+                  <button
+                    type="button"
+                    onClick={startEditing}
+                    aria-label="메모 수정"
+                    className="grid h-7 w-7 place-items-center rounded-full text-ink-soft hover:bg-canvas"
+                  >
+                    <Pencil size={14} strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                이 착장에 대한 메모와 코디 팁이 여기에 표시됩니다. (곧 추가될 기능)
-              </p>
+
+              {editing ? (
+                <div className="mt-2">
+                  <textarea
+                    value={memoDraft}
+                    onChange={(e) => setMemoDraft(e.target.value)}
+                    placeholder="이 착장에 대한 메모를 남겨보세요"
+                    rows={4}
+                    maxLength={2000}
+                    autoFocus
+                    className="input resize-none"
+                  />
+                  {memoError && <p className="mt-2 text-sm text-red-500">{memoError}</p>}
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(false)}
+                      disabled={saving}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-canvas disabled:opacity-60"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveMemo}
+                      disabled={saving}
+                      className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {saving ? '저장 중…' : '저장'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
+                  {entry.memo || '이 착장에 대한 메모를 남겨보세요.'}
+                </p>
+              )}
             </div>
           </div>
         </article>

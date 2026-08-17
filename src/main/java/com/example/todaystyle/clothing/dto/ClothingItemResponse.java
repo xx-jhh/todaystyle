@@ -12,7 +12,8 @@ public record ClothingItemResponse(
         ClothingCategory category,
         String color,
         Fit fit,
-        String imageUrl
+        String imageUrl,
+        String ootdPhotoUrl
 ) {
     public static ClothingItemResponse from(ClothingItem item) {
         return new ClothingItemResponse(
@@ -22,7 +23,8 @@ public record ClothingItemResponse(
                 item.getCategory(),
                 item.getColor(),
                 item.getFit(),
-                item.getImageUrl()
+                item.getImageUrl(),
+                item.getOotdRecord().getPhotoUrl()
         );
     }
 }

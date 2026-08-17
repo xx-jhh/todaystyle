@@ -1,6 +1,8 @@
 package com.example.todaystyle.ootd;
 
 import com.example.todaystyle.ootd.dto.OotdResponse;
+import com.example.todaystyle.ootd.dto.UpdateMemoRequest;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -9,8 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,14 +30,19 @@ public class OotdController {
         this.ootdService = ootdService;
     }
 
-    /** 오늘의 착장 사진 업로드. multipart/form-data (image 파일 + recordDate). */
+    /**
+     * 오늘의 착장 사진 업로드. multipart/form-data (image 파일 + recordDate).
+     * lat/lon을 함께 보내면 업로드 시점 날씨를 스냅샷으로 저장한다(선택, 실패해도 업로드는 성공).
+     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<OotdResponse> upload(
             @AuthenticationPrincipal Long userId,
             @RequestParam("recordDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate recordDate,
-            @RequestParam("image") MultipartFile image
+            @RequestParam("image") MultipartFile image,
+            @RequestParam(value = "lat", required = false) Double lat,
+            @RequestParam(value = "lon", required = false) Double lon
     ) {
-        OotdResponse response = ootdService.upload(userId, recordDate, image);
+        OotdResponse response = ootdService.upload(userId, recordDate, image, lat, lon);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -47,5 +56,15 @@ public class OotdController {
     @GetMapping("/{id}")
     public OotdResponse get(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
         return ootdService.get(userId, id);
+    }
+
+    /** 코디 메모 작성/수정. 빈 문자열을 보내면 메모를 지운다. */
+    @PatchMapping("/{id}")
+    public OotdResponse updateMemo(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateMemoRequest request
+    ) {
+        return ootdService.updateMemo(userId, id, request.memo());
     }
 }

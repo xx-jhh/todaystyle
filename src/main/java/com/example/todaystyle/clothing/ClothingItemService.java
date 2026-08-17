@@ -5,6 +5,8 @@ import com.example.todaystyle.clothing.dto.CreateClothingItemRequest;
 import com.example.todaystyle.ootd.OotdNotFoundException;
 import com.example.todaystyle.ootd.OotdRecord;
 import com.example.todaystyle.ootd.OotdRepository;
+import com.example.todaystyle.recognition.DetectedClothingItem;
+import com.example.todaystyle.user.User;
 import com.example.todaystyle.user.UserRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,21 @@ public class ClothingItemService {
         item.setImageUrl(request.imageUrl());
 
         return ClothingItemResponse.from(clothingItemRepository.save(item));
+    }
+
+    /** 이미지 인식 파이프라인이 자동 추출한 아이템들을 저장한다 (수동 등록과 동일한 저장 경로 재사용). */
+    @Transactional
+    public void saveAutoDetected(Long userId, OotdRecord record, List<DetectedClothingItem> detectedItems) {
+        User userRef = userRepository.getReferenceById(userId);
+        for (DetectedClothingItem detected : detectedItems) {
+            ClothingItem item = new ClothingItem();
+            item.setUser(userRef);
+            item.setOotdRecord(record);
+            item.setCategory(detected.category());
+            item.setColor(normalizeHex(detected.color()));
+            item.setFit(detected.fit());
+            clothingItemRepository.save(item);
+        }
     }
 
     @Transactional(readOnly = true)

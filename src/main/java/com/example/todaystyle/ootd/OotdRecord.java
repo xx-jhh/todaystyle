@@ -44,4 +44,13 @@ public class OotdRecord extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String photoUrl;
+
+    /** 업로드 시점 날씨 스냅샷. 위경도 미제공/기상청 API 실패 시 null(선택 정보). */
+    private Double weatherTemp;
+    private String weatherSky;
+    private String weatherPrecipitation;
+
+    /** 사용자가 상세화면에서 직접 작성하는 코디 메모 (선택). */
+    @Column(columnDefinition = "TEXT")
+    private String memo;
 }

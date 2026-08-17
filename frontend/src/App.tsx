@@ -7,6 +7,8 @@ import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
 import { DetailPage } from './pages/DetailPage'
 import { MyPage } from './pages/MyPage'
+import { RecommendationsPage } from './pages/RecommendationsPage'
+import { BodyMeasurementsPage } from './pages/BodyMeasurementsPage'
 
 export default function App() {
   return (
@@ -21,7 +23,9 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/ootd/:id" element={<DetailPage />} />
+          <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="/me" element={<MyPage />} />
+          <Route path="/me/body" element={<BodyMeasurementsPage />} />
         </Route>
       </Route>
 

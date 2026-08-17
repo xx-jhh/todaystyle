@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +67,12 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<Map<String, Object>> handleBadRequestBinding(Exception e) {
         return build(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    /** JSON 본문의 타입이 안 맞을 때(예: height에 문자열) — 잘못된 요청으로 일관되게 처리. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException e) {
+        return build(HttpStatus.BAD_REQUEST, "요청 본문을 읽을 수 없습니다. 필드 형식을 확인하세요.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
