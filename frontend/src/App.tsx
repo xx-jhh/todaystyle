@@ -9,6 +9,8 @@ import { DetailPage } from './pages/DetailPage'
 import { MyPage } from './pages/MyPage'
 import { RecommendationsPage } from './pages/RecommendationsPage'
 import { BodyMeasurementsPage } from './pages/BodyMeasurementsPage'
+import { WardrobePage } from './pages/WardrobePage'
+import { ClothingItemEditPage } from './pages/ClothingItemEditPage'
 
 export default function App() {
   return (
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/me/body" element={<BodyMeasurementsPage />} />
+          <Route path="/wardrobe" element={<WardrobePage />} />
+          <Route path="/clothing-items/:id" element={<ClothingItemEditPage />} />
         </Route>
       </Route>
 

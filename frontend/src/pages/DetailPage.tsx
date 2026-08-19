@@ -136,8 +136,8 @@ export function DetailPage() {
 
       {entry && (
         <article>
-          {/* 큰 사진 */}
-          <div className="relative aspect-square w-full bg-line">
+          {/* 큰 사진 (4:3 세로 비율) */}
+          <div className="relative aspect-[3/4] w-full bg-line">
             {entry.photoUrl && (
               <img src={entry.photoUrl} alt="착장 사진" className="h-full w-full object-cover" />
             )}

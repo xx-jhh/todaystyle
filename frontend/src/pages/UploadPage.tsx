@@ -97,16 +97,16 @@ export function UploadPage() {
         </button>
       </div>
 
-      {/* 사진 중심 영역 (스토리 업로드 느낌) */}
+      {/* 사진 중심 영역 (4:3 세로 비율로 고정) */}
       <button
         type="button"
         onClick={() => fileInput.current?.click()}
-        className="relative flex-1 overflow-hidden rounded-3xl border border-line bg-ink/[0.03]"
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl border border-line bg-ink/[0.03]"
       >
         {preview ? (
           <img src={preview} alt="선택한 착장 미리보기" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full min-h-72 flex-col items-center justify-center gap-3 text-ink-soft">
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-ink-soft">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-accent">
               <Camera size={30} strokeWidth={1.75} />
             </div>

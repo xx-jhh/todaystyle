@@ -78,6 +78,14 @@ export function MyPage() {
       <ul className="mt-6 overflow-hidden rounded-2xl border border-line bg-paper">
         <li>
           <button
+            onClick={() => navigate('/wardrobe')}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm hover:bg-canvas"
+          >
+            <Shirt size={18} className="text-ink-soft" /> 내 옷장
+          </button>
+        </li>
+        <li className="border-t border-line">
+          <button
             onClick={() => navigate('/me/body')}
             className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm hover:bg-canvas"
           >

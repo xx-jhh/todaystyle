@@ -45,11 +45,12 @@ export interface UpdateBodyMeasurementsRequest {
 
 export interface WeatherResponse {
   currentTemp: number
-  minTemp: number
-  maxTemp: number
+  /** 그 시각 예보 데이터가 없으면 null일 수 있다(백엔드 KmaWeatherClient.TodayForecast 참고). */
+  minTemp: number | null
+  maxTemp: number | null
   sky: string
   precipitation: string
-  precipProbability: number
+  precipProbability: number | null
   outfitTip: string
 }
 
@@ -75,6 +76,13 @@ export interface ClothingItemResponse {
   imageUrl: string | null
   /** 이 아이템이 나온 OOTD 기록의 원본 착장 사진(전체 컷). 개별 아이템 크롭 사진이 없어 이걸 대신 쓴다. */
   ootdPhotoUrl: string
+}
+
+/** 자동 인식(Gemini) 결과가 틀렸을 때 사용자가 직접 카테고리/색상/핏을 바로잡는 요청. */
+export interface UpdateClothingItemRequest {
+  category: ClothingCategory
+  color?: string
+  fit?: Fit
 }
 
 export interface CombinationResponse {

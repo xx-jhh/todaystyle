@@ -1,5 +1,6 @@
 package com.example.todaystyle.common;
 
+import com.example.todaystyle.clothing.ClothingItemNotFoundException;
 import com.example.todaystyle.common.storage.ImageUploadException;
 import com.example.todaystyle.ootd.InvalidImageException;
 import com.example.todaystyle.ootd.OotdAlreadyExistsException;
@@ -55,6 +56,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OotdNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleOotdNotFound(OotdNotFoundException e) {
+        return build(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(ClothingItemNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleClothingItemNotFound(ClothingItemNotFoundException e) {
         return build(HttpStatus.NOT_FOUND, e.getMessage());
     }
 

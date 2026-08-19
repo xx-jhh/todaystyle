@@ -2,6 +2,7 @@ package com.example.todaystyle.clothing;
 
 import com.example.todaystyle.clothing.dto.ClothingItemResponse;
 import com.example.todaystyle.clothing.dto.CreateClothingItemRequest;
+import com.example.todaystyle.clothing.dto.UpdateClothingItemRequest;
 import com.example.todaystyle.ootd.OotdNotFoundException;
 import com.example.todaystyle.ootd.OotdRecord;
 import com.example.todaystyle.ootd.OotdRepository;
@@ -66,6 +67,31 @@ public class ClothingItemService {
         return clothingItemRepository.findByUserIdWithOotd(userId).stream()
                 .map(ClothingItemResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ClothingItemResponse get(Long userId, Long itemId) {
+        ClothingItem item = clothingItemRepository.findByIdAndUserIdWithOotd(itemId, userId)
+                .orElseThrow(() -> new ClothingItemNotFoundException(itemId));
+        return ClothingItemResponse.from(item);
+    }
+
+    /** 자동 인식(또는 수동 등록) 결과가 틀렸을 때 사용자가 직접 카테고리/색상/핏을 바로잡는다. */
+    @Transactional
+    public ClothingItemResponse update(Long userId, Long itemId, UpdateClothingItemRequest request) {
+        ClothingItem item = clothingItemRepository.findByIdAndUserIdWithOotd(itemId, userId)
+                .orElseThrow(() -> new ClothingItemNotFoundException(itemId));
+        item.setCategory(request.category());
+        item.setColor(normalizeHex(request.color()));
+        item.setFit(request.fit());
+        return ClothingItemResponse.from(item);
+    }
+
+    @Transactional
+    public void delete(Long userId, Long itemId) {
+        ClothingItem item = clothingItemRepository.findByIdAndUserIdWithOotd(itemId, userId)
+                .orElseThrow(() -> new ClothingItemNotFoundException(itemId));
+        clothingItemRepository.delete(item);
     }
 
     /** 색상 값을 "#RRGGBB" 형태로 정규화한다. null은 그대로 둔다. */

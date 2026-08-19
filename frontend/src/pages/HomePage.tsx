@@ -2,9 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { listOotd } from '../api/ootd'
-import type { DiaryEntry } from '../api/types'
+import { getWeather } from '../api/weather'
+import type { DiaryEntry, WeatherResponse } from '../api/types'
 import { SAMPLE_ENTRIES } from '../data/sampleEntries'
 import { TimelineEntry } from '../components/TimelineEntry'
+import { WeatherTipCard } from '../components/WeatherTipCard'
+
+/** 위치 접근이 안 되거나 실패하면 서울 좌표로 대체(UploadPage와 동일한 fallback). */
+const FALLBACK_LOCATION = { lat: 37.5665, lon: 126.978 }
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -12,6 +17,31 @@ export function HomePage() {
   const [usingSample, setUsingSample] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [weather, setWeather] = useState<WeatherResponse | null>(null)
+
+  // 오늘의 날씨 + 코디 팁. 실패해도(위치 거부, 서비스키 미설정 등) 화면 전체를 막지 않고
+  // 카드만 조용히 숨긴다 — 다른 날씨 관련 기능들과 동일한 best-effort 원칙.
+  useEffect(() => {
+    let cancelled = false
+    const load = (lat: number, lon: number) =>
+      getWeather(lat, lon)
+        .then((w) => {
+          if (!cancelled) setWeather(w)
+        })
+        .catch(() => {})
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => void load(pos.coords.latitude, pos.coords.longitude),
+        () => void load(FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lon),
+        { timeout: 8000 },
+      )
+    } else {
+      void load(FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lon)
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +85,8 @@ export function HomePage() {
         <h1 className="text-2xl font-extrabold tracking-tight">나의 옷 다이어리</h1>
         <p className="mt-1 text-sm text-ink-soft">날짜별로 쌓이는 오늘의 착장</p>
       </div>
+
+      {weather && <WeatherTipCard weather={weather} />}
 
       {loading && <p className="py-10 text-center text-ink-soft">불러오는 중…</p>}
       {error && <p className="py-10 text-center text-red-500">{error}</p>}

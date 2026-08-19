@@ -3,7 +3,7 @@ import { parseRecordDate } from '../lib/format'
 import { WeatherBadge } from './WeatherBadge'
 
 /**
- * 세로 타임라인 한 항목: 왼쪽 레일(연결선 + 노드) + 정사각 사진 카드.
+ * 세로 타임라인 한 항목: 왼쪽 레일(연결선 + 노드) + 4:3 세로 비율 사진 카드.
  * 날씨 배지는 사진 우상단에 유리 느낌으로 얹혀 카드에 녹아든다.
  */
 export function TimelineEntry({
@@ -47,14 +47,14 @@ export function TimelineEntry({
         )}
       </div>
 
-      {/* 정사각 사진 카드 */}
+      {/* 4:3 세로 비율 사진 카드 */}
       <button
         type="button"
         onClick={() => onOpen(entry)}
         className="group block w-full overflow-hidden rounded-2xl bg-line"
       >
         <div
-          className="relative aspect-square w-full"
+          className="relative aspect-[3/4] w-full"
           style={
             entry.photoUrl
               ? undefined

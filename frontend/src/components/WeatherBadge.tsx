@@ -2,7 +2,7 @@ import { Cloud, CloudRain, CloudSnow, CloudSun, Sun } from 'lucide-react'
 import type { EntryWeather } from '../api/types'
 
 /** 하늘상태/강수 문자열 → 라인 아이콘. 백엔드 WeatherCodes 라벨과 맞춘다. */
-function pickIcon(sky: string, precipitation?: string) {
+export function pickWeatherIcon(sky: string, precipitation?: string) {
   if (precipitation && precipitation.includes('눈')) return CloudSnow
   if (precipitation && (precipitation.includes('비') || precipitation.includes('소나기')))
     return CloudRain
@@ -21,7 +21,7 @@ export function WeatherBadge({
   weather: EntryWeather
   size?: 'sm' | 'md'
 }) {
-  const Icon = pickIcon(weather.sky, weather.precipitation)
+  const Icon = pickWeatherIcon(weather.sky, weather.precipitation)
   const compact = size === 'sm'
   return (
     <div
