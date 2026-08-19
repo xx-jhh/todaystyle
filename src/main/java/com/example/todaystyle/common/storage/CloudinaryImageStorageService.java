@@ -5,7 +5,6 @@ import com.cloudinary.utils.ObjectUtils;
 import java.io.IOException;
 import java.util.Map;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CloudinaryImageStorageService implements ImageStorageService {
@@ -19,8 +18,8 @@ public class CloudinaryImageStorageService implements ImageStorageService {
     }
 
     @Override
-    public String upload(MultipartFile file, String folder) {
-        if (file == null || file.isEmpty()) {
+    public String upload(byte[] imageBytes, String folder) {
+        if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("이미지 파일이 비어 있습니다.");
         }
         if (!properties.isConfigured()) {
@@ -29,7 +28,7 @@ public class CloudinaryImageStorageService implements ImageStorageService {
         }
         try {
             Map<?, ?> result = cloudinary.uploader().upload(
-                    file.getBytes(),
+                    imageBytes,
                     ObjectUtils.asMap("folder", folder, "resource_type", "image"));
             Object secureUrl = result.get("secure_url");
             if (secureUrl == null) {

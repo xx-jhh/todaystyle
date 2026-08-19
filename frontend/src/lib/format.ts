@@ -23,10 +23,34 @@ export function formatLongDate(recordDate: string): string {
   return `${month}월 ${day}일 (${weekday})`
 }
 
-/** 오늘 날짜를 yyyy-MM-dd(로컬 기준)로. */
-export function todayIso(): string {
-  const d = new Date()
+function toIsoDate(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+/** 오늘 날짜를 yyyy-MM-dd(로컬 기준)로. */
+export function todayIso(): string {
+  return toIsoDate(new Date())
+}
+
+/**
+ * 오늘(또는 어제까지) 기준으로 끊기지 않고 이어진 기록 일수.
+ * 오늘 아직 안 올렸다고 바로 0으로 끊기지 않도록, 오늘 기록이 없으면 어제부터 센다.
+ */
+export function calculateStreak(recordDates: string[]): number {
+  const dateSet = new Set(recordDates)
+  const cursor = new Date()
+  cursor.setHours(0, 0, 0, 0)
+
+  if (!dateSet.has(toIsoDate(cursor))) {
+    cursor.setDate(cursor.getDate() - 1)
+  }
+
+  let streak = 0
+  while (dateSet.has(toIsoDate(cursor))) {
+    streak += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return streak
 }

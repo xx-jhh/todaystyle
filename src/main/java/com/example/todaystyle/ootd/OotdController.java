@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,5 +67,12 @@ public class OotdController {
             @Valid @RequestBody UpdateMemoRequest request
     ) {
         return ootdService.updateMemo(userId, id, request.memo());
+    }
+
+    /** OOTD 삭제. 잘못 찍었거나 마음에 안 드는 사진을 지우고 다시 올릴 수 있게 한다. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
+        ootdService.delete(userId, id);
+        return ResponseEntity.noContent().build();
     }
 }

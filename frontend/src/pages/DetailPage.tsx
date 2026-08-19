@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Pencil, Sparkles } from 'lucide-react'
+import { ChevronLeft, Pencil, Sparkles, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { getOotd, updateOotdMemo } from '../api/ootd'
+import { deleteOotd, getOotd, updateOotdMemo } from '../api/ootd'
 import type { DiaryEntry } from '../api/types'
 import { WeatherBadge } from '../components/WeatherBadge'
 import { formatLongDate } from '../lib/format'
@@ -18,6 +18,10 @@ export function DetailPage() {
   const [memoDraft, setMemoDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [memoError, setMemoError] = useState<string | null>(null)
+
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -59,20 +63,73 @@ export function DetailPage() {
     }
   }
 
+  async function confirmDelete() {
+    if (!entry) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteOotd(entry.id)
+      navigate('/', { replace: true })
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : '삭제에 실패했습니다.')
+      setDeleting(false)
+    }
+  }
+
   return (
     <div>
-      {/* 서브 헤더: 뒤로가기 */}
+      {/* 서브 헤더: 뒤로가기 + 삭제 */}
       <div className="flex items-center gap-2 px-2 py-2">
         <button
           type="button"
           aria-label="뒤로"
           onClick={() => navigate(-1)}
-          className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-canvas"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink hover:bg-canvas"
         >
           <ChevronLeft size={24} strokeWidth={1.75} />
         </button>
-        <span className="text-sm font-semibold text-ink-soft">기록 상세</span>
+        <span className="flex-1 text-sm font-semibold text-ink-soft">기록 상세</span>
+        {entry && !confirmingDelete && (
+          <button
+            type="button"
+            aria-label="이 기록 삭제"
+            onClick={() => {
+              setDeleteError(null)
+              setConfirmingDelete(true)
+            }}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-red-50 hover:text-red-500"
+          >
+            <Trash2 size={19} strokeWidth={1.75} />
+          </button>
+        )}
       </div>
+
+      {/* 삭제 확인 배너: 실수로 눌러도 되돌릴 수 있게 명시적 확인/취소 버튼을 둔다. */}
+      {confirmingDelete && (
+        <div className="mx-4 mb-2 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-600">이 기록을 삭제할까요?</p>
+          <p className="mt-1 text-xs text-red-500">사진과 메모가 모두 사라지고, 되돌릴 수 없어요.</p>
+          {deleteError && <p className="mt-2 text-xs font-medium text-red-600">{deleteError}</p>}
+          <div className="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={deleting}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-white disabled:opacity-60"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {deleting ? '삭제하는 중…' : '삭제하기'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading && <p className="py-16 text-center text-ink-soft">불러오는 중…</p>}
       {error && <p className="py-16 text-center text-red-500">{error}</p>}

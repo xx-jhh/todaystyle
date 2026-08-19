@@ -5,12 +5,39 @@ spring:
     password: ${DB_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: update
+      # 스키마는 이제 Flyway(db/migration)가 관리한다. Hibernate는 엔티티-스키마 불일치만
+      # 검증하고(validate) 직접 스키마를 바꾸지 않는다 — auto-DDL은 배포 시 예기치 않은
+      # 스키마 변경(컬럼 삭제/타입 변경 미반영 등) 위험이 있어서 마이그레이션 도구로 교체.
+      ddl-auto: validate
+  flyway:
+    # 기존에 ddl-auto:update로 이미 만들어져 있던 로컬/운영 DB는 V1을 재실행하지 않고
+    # "이미 V1까지 적용된 상태"로 기록만 한다(베이스라인). 완전히 빈 DB(신규 환경/CI)에서는
+    # 이 설정과 무관하게 V1이 정상적으로 처음부터 실행된다.
+    baseline-on-migrate: true
+    baseline-version: 1
   servlet:
     multipart:
       # OOTD 사진 업로드 최대 크기
       max-file-size: 10MB
       max-request-size: 10MB
+  task:
+    execution:
+      # OOTD 업로드 후 날씨 스냅샷/옷 아이템 자동 인식(Gemini)을 처리하는 @Async 스레드풀.
+      # 요청 스레드를 막지 않되, 무제한 스레드 생성은 막기 위해 명시적으로 상한을 둔다.
+      pool:
+        core-size: 2
+        max-size: 4
+        queue-capacity: 50
+      thread-name-prefix: ootd-enrich-
+
+server:
+  servlet:
+    encoding:
+      # JSON 스펙(RFC 8259)상 UTF-8이 기본이라 Spring이 Content-Type에 charset을 생략하는데,
+      # 이걸 charset 없는 그대로 받는 일부 클라이언트(IntelliJ HTTP Client 등)가 한글을 다른
+      # 인코딩으로 오추측해서 깨져 보이는 문제가 있었다. 요청/응답 모두 UTF-8로 명시 고정.
+      charset: UTF-8
+      force: true
 
 cloudinary:
   # 이미지 저장소. 아직 미발급 상태여도 앱은 정상 부팅되며, 실제 업로드 시점에만 필요.
@@ -36,3 +63,10 @@ gemini:
   # 부팅되며, 업로드 시점에 best-effort로만 호출된다(실패해도 업로드 자체는 성공).
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-flash-lite-latest}
+
+app:
+  cors:
+    # 브라우저에서 API를 직접 호출할 수 있는 출처(origin) 허용 목록(콤마 구분).
+    # 지금은 로컬 프론트 개발 서버(Vite)만 허용. 배포 도메인이 정해지면 CORS_ALLOWED_ORIGINS
+    # 환경변수에 콤마로 추가할 것(예: https://todaystyle.example.com,http://localhost:5173).
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

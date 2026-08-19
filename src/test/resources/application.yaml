@@ -1,0 +1,43 @@
+# 테스트 전용 설정. src/test/resources는 테스트 클래스패스에서 src/main/resources보다
+# 먼저 탐색되므로 이 파일이 application.yaml을 완전히 대체한다(병합 아님) — 그래서 main과
+# 동일한 키를 전부 포함해두되, DB만 로컬 MySQL 대신 인메모리 H2로 바꾼다.
+# 로컬 MySQL 설치/DB_PASSWORD 환경변수 없이도 ./gradlew test가 항상 동일하게 통과하고,
+# 나중에 CI(GitHub Actions 등)를 붙여도 그대로 동작한다.
+spring:
+  datasource:
+    url: jdbc:h2:mem:todaystyle;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      # 테스트는 매번 새로 뜨는 인메모리 H2라 Flyway 없이 Hibernate가 엔티티로부터
+      # 스키마를 즉석에서 만드는 게 더 빠르고 단순하다(Flyway는 MySQL 운영 DB 전용).
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+
+jwt:
+  secret: ${JWT_SECRET:todaystyle-local-dev-secret-key-change-me-please-32bytes}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+kma:
+  base-url: http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0
+  service-key: ${KMA_SERVICE_KEY:}
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-flash-lite-latest}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

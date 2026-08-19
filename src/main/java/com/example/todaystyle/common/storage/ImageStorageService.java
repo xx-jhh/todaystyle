@@ -1,19 +1,21 @@
 package com.example.todaystyle.common.storage;
 
-import org.springframework.web.multipart.MultipartFile;
-
 /**
  * 이미지 저장소 추상화. 현재 구현은 Cloudinary이지만, 저장소를 바꾸더라도
  * 이 인터페이스에 의존하는 서비스 코드는 그대로 둘 수 있도록 분리한다.
+ *
+ * <p>MultipartFile이 아니라 byte[]를 받는 이유: 호출하는 쪽(OotdService)이 비동기 보강
+ * 이벤트에도 같은 바이트가 필요해서 어차피 한 번 읽어야 하는데, 여기서 MultipartFile을
+ * 또 읽으면 같은 파일을 두 번 읽게 된다. 호출자가 한 번 읽은 바이트를 그대로 넘긴다.
  */
 public interface ImageStorageService {
 
     /**
      * 이미지를 업로드하고 접근 가능한 URL을 반환한다.
      *
-     * @param file   업로드할 이미지 파일
-     * @param folder 저장소 내 폴더 경로 (예: "todaystyle/ootd/42")
+     * @param imageBytes 업로드할 이미지 바이트
+     * @param folder     저장소 내 폴더 경로 (예: "todaystyle/ootd/42")
      * @return 저장된 이미지의 공개 URL
      */
-    String upload(MultipartFile file, String folder);
+    String upload(byte[] imageBytes, String folder);
 }

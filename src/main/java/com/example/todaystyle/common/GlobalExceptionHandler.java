@@ -1,8 +1,11 @@
 package com.example.todaystyle.common;
 
 import com.example.todaystyle.common.storage.ImageUploadException;
+import com.example.todaystyle.ootd.InvalidImageException;
 import com.example.todaystyle.ootd.OotdAlreadyExistsException;
 import com.example.todaystyle.ootd.OotdNotFoundException;
+import com.example.todaystyle.security.TooManyRequestsException;
+import com.example.todaystyle.security.UnauthenticatedException;
 import com.example.todaystyle.user.DuplicateEmailException;
 import com.example.todaystyle.user.InvalidCredentialsException;
 import com.example.todaystyle.weather.WeatherUnavailableException;
@@ -35,6 +38,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
 
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthenticated(UnauthenticatedException e) {
+        return build(HttpStatus.UNAUTHORIZED, e.getMessage());
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> handleTooManyRequests(TooManyRequestsException e) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+    }
+
     @ExceptionHandler(OotdAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleOotdAlreadyExists(OotdAlreadyExistsException e) {
         return build(HttpStatus.CONFLICT, e.getMessage());
@@ -43,6 +56,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OotdNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleOotdNotFound(OotdNotFoundException e) {
         return build(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidImageException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidImage(InvalidImageException e) {
+        return build(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(ImageUploadException.class)
