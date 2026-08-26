@@ -16,7 +16,7 @@ CREATE TABLE users (
     updated_at       DATETIME(6)  NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uq_users_email UNIQUE (email)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE ootd_records (
     id                     BIGINT       NOT NULL AUTO_INCREMENT,
@@ -32,7 +32,7 @@ CREATE TABLE ootd_records (
     PRIMARY KEY (id),
     CONSTRAINT uq_ootd_records_user_date UNIQUE (user_id, record_date),
     CONSTRAINT fk_ootd_records_user FOREIGN KEY (user_id) REFERENCES users (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE clothing_items (
     id              BIGINT       NOT NULL AUTO_INCREMENT,
@@ -47,4 +47,4 @@ CREATE TABLE clothing_items (
     PRIMARY KEY (id),
     CONSTRAINT fk_clothing_items_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_clothing_items_ootd_record FOREIGN KEY (ootd_record_id) REFERENCES ootd_records (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
