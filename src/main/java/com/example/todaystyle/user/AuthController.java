@@ -1,6 +1,8 @@
 package com.example.todaystyle.user;
 
 import com.example.todaystyle.user.dto.LoginRequest;
+import com.example.todaystyle.user.dto.PasswordResetConfirmRequest;
+import com.example.todaystyle.user.dto.PasswordResetRequest;
 import com.example.todaystyle.user.dto.SignUpRequest;
 import com.example.todaystyle.user.dto.TokenResponse;
 import com.example.todaystyle.user.dto.UpdateBodyMeasurementsRequest;
@@ -35,6 +37,19 @@ public class AuthController {
     @PostMapping("/api/auth/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    /** 가입된 이메일이면 재설정 링크를 메일로 보낸다. 계정 존재 여부와 무관하게 항상 204. */
+    @PostMapping("/api/auth/password-reset/request")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/api/auth/password-reset/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        authService.confirmPasswordReset(request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/api/users/me")

@@ -60,7 +60,7 @@ export const BODY_TYPE_QUIZ: QuizQuestion[] = [
     options: [
       { label: '탄력 있고 단단함', type: 'STRAIGHT' },
       { label: '부드럽고 말랑함', type: 'WAVE' },
-      { label: '마디가 도드라짐', type: 'NATURAL' },
+      { label: '손목뼈·손가락 마디가 두드러져 보임', type: 'NATURAL' },
     ],
   },
 ]

@@ -17,6 +17,7 @@ import com.example.todaystyle.user.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -168,7 +169,7 @@ class CombinationRecommendationServiceTest {
         User user = new User();
         user.setId(USER_ID);
         user.setBodyType(bodyType);
-        user.setPreferredStyle(preferredStyle);
+        user.setPreferredStyles(preferredStyle == null ? Set.of() : Set.of(preferredStyle));
         return user;
     }
 

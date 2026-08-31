@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import { LogOut, Ruler, Settings, Shirt, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { listOotd } from '../api/ootd'
+import { getOotdCount, listOotd } from '../api/ootd'
 import { getCombos } from '../api/recommendations'
 import { useAuth } from '../auth/AuthContext'
 import { calculateStreak } from '../lib/format'
 
 /** 추천 API가 허용하는 최대 limit(RecommendationController.MAX_LIMIT)과 맞춘 값. */
 const MAX_COMBO_LIMIT = 50
+
+/**
+ * 연속 기록일(streak) 계산용 조회 개수. 하루 최대 1건이라(OotdService.upload 중복 방지) streak은
+ * 이 값을 넘을 수 없다 — spring.data.web.pageable.max-page-size(50)와 맞춘 상한.
+ */
+const STREAK_LOOKBACK = 50
 
 export function MyPage() {
   const navigate = useNavigate()
@@ -18,12 +24,16 @@ export function MyPage() {
 
   useEffect(() => {
     let cancelled = false
-    listOotd()
-      .then((entries) => {
-        if (!cancelled) {
-          setRecordCount(entries.length)
-          setStreak(calculateStreak(entries.map((e) => e.recordDate)))
-        }
+    getOotdCount()
+      .then(({ count }) => {
+        if (!cancelled) setRecordCount(count)
+      })
+      .catch(() => {
+        // 통계는 부가 정보라 실패해도 화면 전체를 에러로 막지 않는다(0으로 유지).
+      })
+    listOotd(0, STREAK_LOOKBACK)
+      .then((result) => {
+        if (!cancelled) setStreak(calculateStreak(result.items.map((e) => e.recordDate)))
       })
       .catch(() => {
         // 통계는 부가 정보라 실패해도 화면 전체를 에러로 막지 않는다(0으로 유지).

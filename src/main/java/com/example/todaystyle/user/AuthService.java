@@ -2,10 +2,15 @@ package com.example.todaystyle.user;
 
 import com.example.todaystyle.security.JwtTokenProvider;
 import com.example.todaystyle.user.dto.LoginRequest;
+import com.example.todaystyle.user.dto.PasswordResetConfirmRequest;
+import com.example.todaystyle.user.dto.PasswordResetRequest;
 import com.example.todaystyle.user.dto.SignUpRequest;
 import com.example.todaystyle.user.dto.TokenResponse;
 import com.example.todaystyle.user.dto.UpdateBodyMeasurementsRequest;
 import com.example.todaystyle.user.dto.UserResponse;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,18 +18,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
+    /** 재설정 링크 유효 시간. */
+    private static final long RESET_TOKEN_TTL_MINUTES = 30;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final PasswordResetTokenRepository resetTokenRepository;
+    private final PasswordResetMailSender resetMailSender;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtTokenProvider tokenProvider
+            JwtTokenProvider tokenProvider,
+            PasswordResetTokenRepository resetTokenRepository,
+            PasswordResetMailSender resetMailSender
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.resetTokenRepository = resetTokenRepository;
+        this.resetMailSender = resetMailSender;
     }
 
     @Transactional
@@ -41,7 +55,8 @@ public class AuthService {
         user.setWeight(request.weight());
         user.setWaistInch(request.waistInch());
         user.setBodyType(request.bodyType());
-        user.setPreferredStyle(request.preferredStyle());
+        user.setPreferredStyles(request.preferredStyles() == null
+                ? new HashSet<>() : new HashSet<>(request.preferredStyles()));
 
         User saved = userRepository.save(user);
         return issueToken(saved);
@@ -63,6 +78,32 @@ public class AuthService {
         user.setWeight(request.weight());
         user.setWaistInch(request.waistInch());
         return UserResponse.from(user);
+    }
+
+    /**
+     * 가입된 이메일이면 재설정 토큰을 발급해 메일로 보낸다. 계정 존재 여부가 응답으로
+     * 드러나지 않도록, 이메일이 없어도 예외 없이 조용히 끝낸다.
+     */
+    @Transactional
+    public void requestPasswordReset(PasswordResetRequest request) {
+        userRepository.findByEmail(request.email()).ifPresent(user -> {
+            resetTokenRepository.deleteByUserId(user.getId());
+            String token = UUID.randomUUID().toString();
+            resetTokenRepository.save(new PasswordResetToken(
+                    user.getId(), token, LocalDateTime.now().plusMinutes(RESET_TOKEN_TTL_MINUTES)));
+            resetMailSender.send(user.getEmail(), token);
+        });
+    }
+
+    @Transactional
+    public void confirmPasswordReset(PasswordResetConfirmRequest request) {
+        PasswordResetToken resetToken = resetTokenRepository.findByToken(request.token())
+                .filter(PasswordResetToken::isValid)
+                .orElseThrow(InvalidResetTokenException::new);
+        User user = userRepository.findById(resetToken.getUserId())
+                .orElseThrow(InvalidResetTokenException::new);
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        resetToken.setUsed(true);
     }
 
     private TokenResponse issueToken(User user) {

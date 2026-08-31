@@ -56,7 +56,8 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         // CORS 프리플라이트(OPTIONS)는 Authorization 헤더 없이 오므로 인증 없이 통과시킨다.
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
+                                "/api/auth/password-reset/request", "/api/auth/password-reset/confirm").permitAll()
                         // 실제 데이터를 다루는 API만 인증을 요구한다.
                         .requestMatchers("/api/**").authenticated()
                         // 그 외(프론트 SPA 화면, 정적 리소스)는 인증 없이 접근 가능.

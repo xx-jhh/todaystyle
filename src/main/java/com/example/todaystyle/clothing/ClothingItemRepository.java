@@ -2,15 +2,20 @@ package com.example.todaystyle.clothing;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ClothingItemRepository extends JpaRepository<ClothingItem, Long> {
 
-    /** 내 모든 옷 아이템 (착용 날짜 참조를 위해 OOTD를 함께 로딩). */
-    @Query("select ci from ClothingItem ci join fetch ci.ootdRecord where ci.user.id = :userId")
-    List<ClothingItem> findByUserIdWithOotd(@Param("userId") Long userId);
+    /** 내 모든 옷 아이템 (착용 날짜 참조를 위해 OOTD를 함께 로딩, 최신 등록순, 페이지네이션). */
+    @Query(
+            value = "select ci from ClothingItem ci join fetch ci.ootdRecord "
+                    + "where ci.user.id = :userId order by ci.id desc",
+            countQuery = "select count(ci) from ClothingItem ci where ci.user.id = :userId")
+    Page<ClothingItem> findByUserIdWithOotd(@Param("userId") Long userId, Pageable pageable);
 
     /** 내 옷 아이템 단건 (수정/삭제 전 소유권 확인용, OOTD 함께 로딩). */
     @Query("select ci from ClothingItem ci join fetch ci.ootdRecord "

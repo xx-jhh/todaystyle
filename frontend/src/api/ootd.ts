@@ -1,8 +1,13 @@
 import { apiFetch } from './client'
-import type { OotdResponse } from './types'
+import type { OotdResponse, PagedResponse } from './types'
 
-export function listOotd(): Promise<OotdResponse[]> {
-  return apiFetch<OotdResponse[]>('/api/ootd')
+export function listOotd(page = 0, size = 20): Promise<PagedResponse<OotdResponse>> {
+  return apiFetch<PagedResponse<OotdResponse>>(`/api/ootd?page=${page}&size=${size}`)
+}
+
+/** 마이페이지 통계(전체 기록 수)용. 목록 API는 페이지네이션이라 전체 개수를 안 담는다. */
+export function getOotdCount(): Promise<{ count: number }> {
+  return apiFetch<{ count: number }>('/api/ootd/count')
 }
 
 export function getOotd(id: number): Promise<OotdResponse> {
@@ -35,5 +40,7 @@ export function uploadOotd(
     form.append('lat', String(location.lat))
     form.append('lon', String(location.lon))
   }
-  return apiFetch<OotdResponse>('/api/ootd', { method: 'POST', body: form })
+  // Cloudinary 업로드 + 이미지 인식(Gemini)/날씨 스냅샷이 같은 요청 안에서 순차로 걸려
+  // 기본 타임아웃보다 오래 걸릴 수 있다.
+  return apiFetch<OotdResponse>('/api/ootd', { method: 'POST', body: form, timeoutMs: 30000 })
 }

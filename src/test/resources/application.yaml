@@ -16,6 +16,17 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   servlet:
     multipart:
       max-file-size: 10MB
@@ -39,5 +50,6 @@ gemini:
   model: ${GEMINI_MODEL:gemini-flash-lite-latest}
 
 app:
+  base-url: ${APP_BASE_URL:http://localhost:5173}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

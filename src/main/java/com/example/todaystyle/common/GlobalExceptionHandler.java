@@ -9,6 +9,7 @@ import com.example.todaystyle.security.TooManyRequestsException;
 import com.example.todaystyle.security.UnauthenticatedException;
 import com.example.todaystyle.user.DuplicateEmailException;
 import com.example.todaystyle.user.InvalidCredentialsException;
+import com.example.todaystyle.user.InvalidResetTokenException;
 import com.example.todaystyle.weather.WeatherUnavailableException;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -37,6 +38,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException e) {
         return build(HttpStatus.UNAUTHORIZED, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidResetTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidResetToken(InvalidResetTokenException e) {
+        return build(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(UnauthenticatedException.class)

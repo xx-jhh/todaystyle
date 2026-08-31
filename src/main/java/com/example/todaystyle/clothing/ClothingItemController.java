@@ -3,8 +3,10 @@ package com.example.todaystyle.clothing;
 import com.example.todaystyle.clothing.dto.ClothingItemResponse;
 import com.example.todaystyle.clothing.dto.CreateClothingItemRequest;
 import com.example.todaystyle.clothing.dto.UpdateClothingItemRequest;
+import com.example.todaystyle.common.PageResponse;
 import jakarta.validation.Valid;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,10 +38,13 @@ public class ClothingItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /** 내 옷장 (등록된 모든 아이템). */
+    /** 내 옷장 (등록된 모든 아이템, 페이지네이션). */
     @GetMapping("/api/clothing-items")
-    public List<ClothingItemResponse> listMine(@AuthenticationPrincipal Long userId) {
-        return clothingItemService.listMine(userId);
+    public PageResponse<ClothingItemResponse> listMine(
+            @AuthenticationPrincipal Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return clothingItemService.listMine(userId, pageable);
     }
 
     /** 옷 아이템 단건 조회 (수정 화면 진입용). */

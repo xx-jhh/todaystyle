@@ -13,6 +13,7 @@ import com.example.todaystyle.user.UserRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,7 @@ public class CombinationRecommendationService {
     public List<CombinationResponse> recommendCombos(Long userId, int limit) {
         User user = userRepository.findById(userId).orElse(null);
         BodyType bodyType = user == null ? null : user.getBodyType();
-        StyleCategory preferredStyle = user == null ? null : user.getPreferredStyle();
+        Set<StyleCategory> preferredStyles = user == null ? Set.of() : user.getPreferredStyles();
 
         List<ClothingItem> tops =
                 clothingItemRepository.findByUserIdAndCategoryWithOotd(userId, ClothingCategory.TOP);
@@ -59,7 +60,7 @@ public class CombinationRecommendationService {
                 if (top.getOotdRecord().getId().equals(bottom.getOotdRecord().getId())) {
                     continue;
                 }
-                results.add(score(top, bottom, bodyType, preferredStyle));
+                results.add(score(top, bottom, bodyType, preferredStyles));
             }
         }
 
@@ -68,18 +69,18 @@ public class CombinationRecommendationService {
     }
 
     private CombinationResponse score(
-            ClothingItem top, ClothingItem bottom, BodyType bodyType, StyleCategory preferredStyle
+            ClothingItem top, ClothingItem bottom, BodyType bodyType, Set<StyleCategory> preferredStyles
     ) {
         ColorHarmony.Result color = ColorHarmony.evaluate(top.getColor(), bottom.getColor());
         double bodyFitScore = fitScore(
                 top.getFit(), bottom.getFit(), bodyType != null, fit -> BodyTypeStyleRules.matches(bodyType, fit));
         double styleFitScore = fitScore(
-                top.getFit(), bottom.getFit(), preferredStyle != null, fit -> StyleFitRules.matches(preferredStyle, fit));
+                top.getFit(), bottom.getFit(), !preferredStyles.isEmpty(), fit -> matchesAnyStyle(preferredStyles, fit));
 
         double total = COLOR_WEIGHT * color.score()
                 + BODY_FIT_WEIGHT * bodyFitScore
                 + STYLE_FIT_WEIGHT * styleFitScore;
-        String reason = buildReason(color.label(), bodyType, preferredStyle, top.getFit(), bottom.getFit());
+        String reason = buildReason(color.label(), bodyType, preferredStyles, top.getFit(), bottom.getFit());
 
         return new CombinationResponse(
                 ClothingItemResponse.from(top),
@@ -108,14 +109,19 @@ public class CombinationRecommendationService {
     }
 
     private String buildReason(
-            String colorLabel, BodyType bodyType, StyleCategory preferredStyle, Fit topFit, Fit bottomFit
+            String colorLabel, BodyType bodyType, Set<StyleCategory> preferredStyles, Fit topFit, Fit bottomFit
     ) {
         List<String> parts = new ArrayList<>();
         parts.add(colorLabel);
         addFitNote(parts, "체형", bodyType != null, fit -> BodyTypeStyleRules.matches(bodyType, fit), topFit, bottomFit);
-        addFitNote(parts, "스타일", preferredStyle != null,
-                fit -> StyleFitRules.matches(preferredStyle, fit), topFit, bottomFit);
+        addFitNote(parts, "스타일", !preferredStyles.isEmpty(),
+                fit -> matchesAnyStyle(preferredStyles, fit), topFit, bottomFit);
         return String.join(" · ", parts);
+    }
+
+    /** 선호 스타일을 여러 개 골랐으면, 그중 하나라도 맞는 핏이면 "스타일에 맞는다"고 인정한다. */
+    private boolean matchesAnyStyle(Set<StyleCategory> preferredStyles, Fit fit) {
+        return preferredStyles.stream().anyMatch(style -> StyleFitRules.matches(style, fit));
     }
 
     private void addFitNote(

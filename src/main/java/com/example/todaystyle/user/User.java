@@ -1,14 +1,20 @@
 package com.example.todaystyle.user;
 
 import com.example.todaystyle.common.BaseTimeEntity;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,7 +54,10 @@ public class User extends BaseTimeEntity {
     @Column(length = 20)
     private BodyType bodyType;
 
+    /** 여러 스타일을 동시에 선호할 수 있어(예: 캐주얼+미니멀) 복수 선택으로 저장한다. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_preferred_styles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private StyleCategory preferredStyle;
+    @Column(name = "style", nullable = false, length = 20)
+    private Set<StyleCategory> preferredStyles = new HashSet<>();
 }

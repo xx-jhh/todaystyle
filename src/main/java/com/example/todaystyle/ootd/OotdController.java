@@ -1,10 +1,13 @@
 package com.example.todaystyle.ootd;
 
+import com.example.todaystyle.common.PageResponse;
+import com.example.todaystyle.ootd.dto.OotdCountResponse;
 import com.example.todaystyle.ootd.dto.OotdResponse;
 import com.example.todaystyle.ootd.dto.UpdateMemoRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -47,10 +50,19 @@ public class OotdController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /** 내 OOTD 목록 (최신 착장 날짜순). */
+    /** 내 OOTD 목록 (최신 착장 날짜순, 페이지네이션). */
     @GetMapping
-    public List<OotdResponse> list(@AuthenticationPrincipal Long userId) {
-        return ootdService.list(userId);
+    public PageResponse<OotdResponse> list(
+            @AuthenticationPrincipal Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ootdService.list(userId, pageable);
+    }
+
+    /** 내 OOTD 전체 개수(마이페이지 통계용). 목록 API가 페이지네이션이라 별도로 내려준다. */
+    @GetMapping("/count")
+    public OotdCountResponse count(@AuthenticationPrincipal Long userId) {
+        return ootdService.count(userId);
     }
 
     /** 내 OOTD 단건 조회. */

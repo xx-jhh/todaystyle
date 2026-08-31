@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#111827" />
     <title>todaystyle — 오늘의 코디</title>
+    <!-- index.css의 font-sans가 Pretendard를 1순위로 지정하지만 지금까지 실제로 로드하는 곳이 없어
+         시스템 기본 폰트로만 렌더링되고 있었다. 가변 폰트(용량 작음)로 CDN 로드. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      as="style"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+    />
   </head>
   <body>
     <div id="root"></div>

@@ -26,7 +26,7 @@ export function SignupPage() {
 
   // 체형 / 선호 스타일 (전부 선택 입력)
   const [bodyType, setBodyType] = useState<BodyType | undefined>()
-  const [preferredStyle, setPreferredStyle] = useState<StyleCategory | undefined>()
+  const [preferredStyles, setPreferredStyles] = useState<StyleCategory[]>([])
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -50,7 +50,7 @@ export function SignupPage() {
         password,
         nickname,
         bodyType,
-        preferredStyle,
+        preferredStyles,
       })
       signIn(accessToken)
       navigate('/', { replace: true })
@@ -145,7 +145,7 @@ export function SignupPage() {
       )}
 
       {step === 'style' && (
-        <StepShell title="선호 스타일" subtitle="관심 있는 스타일을 골라주세요 (선택)">
+        <StepShell title="선호 스타일" subtitle="관심 있는 스타일을 모두 골라주세요 (선택, 복수 선택 가능)">
           <div className="flex flex-col gap-2.5">
             {STYLE_CATEGORY_OPTIONS.map((opt) => (
               <SelectCard
@@ -153,9 +153,13 @@ export function SignupPage() {
                 icon={Shirt}
                 label={opt.label}
                 description={opt.description}
-                selected={preferredStyle === opt.value}
+                selected={preferredStyles.includes(opt.value)}
                 onSelect={() =>
-                  setPreferredStyle(preferredStyle === opt.value ? undefined : opt.value)
+                  setPreferredStyles((prev) =>
+                    prev.includes(opt.value)
+                      ? prev.filter((style) => style !== opt.value)
+                      : [...prev, opt.value],
+                  )
                 }
               />
             ))}

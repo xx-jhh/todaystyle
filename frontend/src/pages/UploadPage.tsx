@@ -129,7 +129,6 @@ export function UploadPage() {
         ref={fileInput}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={(e) => pickFile(e.target.files?.[0])}
       />

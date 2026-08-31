@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import { clearToken, getToken, setToken } from '../api/client'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { clearToken, getToken, setToken, UNAUTHORIZED_EVENT } from '../api/client'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -11,6 +11,14 @@ const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setTokenState] = useState<string | null>(() => getToken())
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setTokenState(null)
+    }
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
+  }, [])
 
   const value = useMemo<AuthState>(
     () => ({

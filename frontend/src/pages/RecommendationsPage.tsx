@@ -45,7 +45,9 @@ export function RecommendationsPage() {
           <p className="text-sm">
             추천할 조합이 아직 없어요.
             <br />
-            상의·하의 기록이 더 쌓이면 새로운 조합을 찾아드릴게요.
+            서로 다른 날짜에 상의·하의를 각각 하나 이상 올리면
+            <br />
+            아직 함께 입지 않은 조합을 찾아드려요.
           </p>
         </div>
       )}

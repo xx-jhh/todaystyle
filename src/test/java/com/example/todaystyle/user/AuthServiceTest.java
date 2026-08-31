@@ -12,6 +12,7 @@ import com.example.todaystyle.user.dto.LoginRequest;
 import com.example.todaystyle.user.dto.SignUpRequest;
 import com.example.todaystyle.user.dto.TokenResponse;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,12 +30,17 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private JwtTokenProvider tokenProvider;
+    @Mock
+    private PasswordResetTokenRepository resetTokenRepository;
+    @Mock
+    private PasswordResetMailSender resetMailSender;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, passwordEncoder, tokenProvider);
+        authService = new AuthService(
+                userRepository, passwordEncoder, tokenProvider, resetTokenRepository, resetMailSender);
     }
 
     @Test
@@ -52,7 +58,7 @@ class AuthServiceTest {
     void 회원가입_성공시_비밀번호를_암호화해_저장하고_토큰을_발급한다() {
         SignUpRequest request = new SignUpRequest(
                 "new@todaystyle.com", "password123", "닉네임",
-                null, null, null, BodyType.STRAIGHT, StyleCategory.CASUAL);
+                null, null, null, BodyType.STRAIGHT, Set.of(StyleCategory.CASUAL));
         when(userRepository.existsByEmail("new@todaystyle.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("encoded-password");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {

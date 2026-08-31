@@ -66,6 +66,9 @@ export function LoginPage() {
         >
           {loading ? '로그인 중…' : '로그인'}
         </button>
+        <Link to="/forgot-password" className="text-center text-sm text-ink-soft">
+          비밀번호를 잊으셨나요?
+        </Link>
       </form>
 
       <p className="mt-6 text-center text-sm text-ink-soft">

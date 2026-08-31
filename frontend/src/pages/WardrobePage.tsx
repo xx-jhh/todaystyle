@@ -12,12 +12,17 @@ export function WardrobePage() {
   const [items, setItems] = useState<ClothingItemResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [hasNext, setHasNext] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    listClothingItems()
-      .then((list) => {
-        if (!cancelled) setItems(list)
+    listClothingItems(0)
+      .then((result) => {
+        if (cancelled) return
+        setItems(result.items)
+        setHasNext(result.hasNext)
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof ApiError ? err.message : '옷장을 불러오지 못했습니다.')
@@ -29,6 +34,21 @@ export function WardrobePage() {
       cancelled = true
     }
   }, [])
+
+  async function loadMore() {
+    const nextPage = page + 1
+    setLoadingMore(true)
+    try {
+      const result = await listClothingItems(nextPage)
+      setItems((prev) => [...prev, ...result.items])
+      setHasNext(result.hasNext)
+      setPage(nextPage)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '옷장을 불러오지 못했습니다.')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const byCategory = groupByCategory(items)
   const categorySections = CLOTHING_CATEGORY_ORDER.map((category) => ({
@@ -53,7 +73,8 @@ export function WardrobePage() {
       <div className="px-4 pt-3 pb-8">
         <h1 className="text-xl font-extrabold tracking-tight">내 옷장</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          지금까지 기록에서 인식된 옷 {items.length}개예요. 잘못 인식됐다면 탭해서 고칠 수 있어요.
+          지금까지 기록에서 인식된 옷 {items.length}
+          {hasNext ? '+' : ''}개예요. 잘못 인식됐다면 탭해서 고칠 수 있어요.
         </p>
 
         {loading && <p className="py-16 text-center text-ink-soft">불러오는 중…</p>}
@@ -87,6 +108,17 @@ export function WardrobePage() {
                 </ul>
               </section>
             ))}
+
+            {hasNext && (
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="w-full rounded-xl border border-line py-3 text-sm font-semibold text-ink-soft hover:bg-canvas disabled:opacity-60"
+              >
+                {loadingMore ? '불러오는 중…' : '더 보기'}
+              </button>
+            )}
           </div>
         )}
       </div>

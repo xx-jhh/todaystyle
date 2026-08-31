@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.Set;
 
 /**
  * 회원가입 요청. 신체 정보/체형/선호 스타일은 선택 입력이며, 현재 프론트는 체형을
@@ -21,6 +22,6 @@ public record SignUpRequest(
         @Min(20) @Max(300) Integer weight,
         @Min(15) @Max(60) Integer waistInch,
         BodyType bodyType,
-        StyleCategory preferredStyle
+        Set<StyleCategory> preferredStyles
 ) {
 }

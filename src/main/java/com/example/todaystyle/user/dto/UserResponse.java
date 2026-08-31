@@ -3,6 +3,7 @@ package com.example.todaystyle.user.dto;
 import com.example.todaystyle.user.BodyType;
 import com.example.todaystyle.user.StyleCategory;
 import com.example.todaystyle.user.User;
+import java.util.Set;
 
 public record UserResponse(
         Long id,
@@ -12,7 +13,7 @@ public record UserResponse(
         Integer weight,
         Integer waistInch,
         BodyType bodyType,
-        StyleCategory preferredStyle
+        Set<StyleCategory> preferredStyles
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -23,7 +24,7 @@ public record UserResponse(
                 user.getWeight(),
                 user.getWaistInch(),
                 user.getBodyType(),
-                user.getPreferredStyle()
+                user.getPreferredStyles()
         );
     }
 }

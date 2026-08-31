@@ -32,6 +32,10 @@ class OotdServiceTest {
 
     private static final Long USER_ID = 1L;
     private static final LocalDate RECORD_DATE = LocalDate.of(2026, 8, 19);
+    /** 실제 JPEG 파일 시그니처(FF D8 FF)로 시작하는 더미 바이트 — ImageSignature 검증을 통과시키기 위함. */
+    private static final byte[] JPEG_MAGIC_BYTES = {
+            (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'f', 'a', 'k', 'e'
+    };
 
     @Mock
     private OotdRepository ootdRepository;
@@ -84,8 +88,21 @@ class OotdServiceTest {
     }
 
     @Test
+    void contentType은_image로_속였지만_실제_바이트가_이미지가_아니면_거부한다() {
+        when(ootdRepository.existsByUserIdAndRecordDate(USER_ID, RECORD_DATE)).thenReturn(false);
+        MultipartFile spoofed = new MockMultipartFile(
+                "image", "malware.png", "image/png", "not actually an image".getBytes());
+
+        assertThatThrownBy(() -> ootdService.upload(USER_ID, RECORD_DATE, spoofed, null, null))
+                .isInstanceOf(InvalidImageException.class);
+
+        verifyNoInteractions(imageStorageService, eventPublisher);
+        verify(ootdRepository, never()).save(any());
+    }
+
+    @Test
     void 정상_이미지는_업로드되고_보강_이벤트가_발행된다() {
-        MultipartFile image = new MockMultipartFile("image", "photo.jpg", "image/jpeg", "fake-image-bytes".getBytes());
+        MultipartFile image = new MockMultipartFile("image", "photo.jpg", "image/jpeg", JPEG_MAGIC_BYTES);
         when(ootdRepository.existsByUserIdAndRecordDate(USER_ID, RECORD_DATE)).thenReturn(false);
         when(imageStorageService.upload(any(byte[].class), eq("todaystyle/ootd/" + USER_ID)))
                 .thenReturn("https://cdn.example.com/photo.jpg");

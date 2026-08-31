@@ -1,14 +1,17 @@
 package com.example.todaystyle.ootd;
 
 import com.example.todaystyle.clothing.ClothingItemRepository;
+import com.example.todaystyle.common.PageResponse;
 import com.example.todaystyle.common.storage.ImageStorageService;
+import com.example.todaystyle.ootd.dto.OotdCountResponse;
 import com.example.todaystyle.ootd.dto.OotdResponse;
 import com.example.todaystyle.user.UserRepository;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDate;
-import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,6 +58,7 @@ public class OotdService {
         // 호출보다 먼저 일어나므로 "업로드는 성공했는데 그다음 단계가 실패해서 저장소에 참조
         // 없는 사진이 남는" 상황 자체가 생기지 않는다.
         byte[] imageBytes = readBytes(image);
+        validateImageSignature(imageBytes);
         String photoUrl = imageStorageService.upload(imageBytes, "todaystyle/ootd/" + userId);
 
         OotdRecord record = new OotdRecord();
@@ -77,7 +81,11 @@ public class OotdService {
         }
     }
 
-    /** Cloudinary/인식 파이프라인까지 가기 전에, 비어 있거나 이미지가 아닌 파일을 걸러낸다. */
+    /**
+     * Cloudinary/인식 파이프라인까지 가기 전에, 비어 있거나 이미지가 아닌 파일을 걸러낸다.
+     * Content-Type 헤더만으로는 클라이언트가 무엇을 보냈다고 "주장"하는지만 알 수 있어서 1차로만
+     * 쓰고, 실제 바이트 검증은 {@link #validateImageSignature}가 파일을 다 읽은 뒤 한 번 더 한다.
+     */
     private void validateImage(MultipartFile image) {
         if (image.isEmpty()) {
             throw new InvalidImageException("이미지 파일이 비어 있습니다.");
@@ -88,11 +96,23 @@ public class OotdService {
         }
     }
 
+    /** Content-Type 헤더는 위조 가능하므로, 실제 바이트의 파일 시그니처(매직 바이트)로 다시 확인한다. */
+    private void validateImageSignature(byte[] imageBytes) {
+        if (!ImageSignature.looksLikeImage(imageBytes)) {
+            throw new InvalidImageException("이미지 파일만 업로드할 수 있습니다.");
+        }
+    }
+
     @Transactional(readOnly = true)
-    public List<OotdResponse> list(Long userId) {
-        return ootdRepository.findByUserIdOrderByRecordDateDesc(userId).stream()
-                .map(OotdResponse::from)
-                .toList();
+    public PageResponse<OotdResponse> list(Long userId, Pageable pageable) {
+        Page<OotdRecord> page = ootdRepository.findByUserIdOrderByRecordDateDesc(userId, pageable);
+        return PageResponse.of(page, OotdResponse::from);
+    }
+
+    /** 마이페이지 통계(전체 기록 수)용. 목록 API는 이제 페이지네이션이라 전체 개수를 안 담는다. */
+    @Transactional(readOnly = true)
+    public OotdCountResponse count(Long userId) {
+        return new OotdCountResponse(ootdRepository.countByUserId(userId));
     }
 
     @Transactional(readOnly = true)

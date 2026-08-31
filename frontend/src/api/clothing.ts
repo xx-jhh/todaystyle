@@ -1,9 +1,9 @@
 import { apiFetch } from './client'
-import type { ClothingItemResponse, UpdateClothingItemRequest } from './types'
+import type { ClothingItemResponse, PagedResponse, UpdateClothingItemRequest } from './types'
 
-/** 내 옷장 (지금까지 기록에서 수동/자동으로 등록된 옷 아이템 전체). */
-export function listClothingItems(): Promise<ClothingItemResponse[]> {
-  return apiFetch<ClothingItemResponse[]>('/api/clothing-items')
+/** 내 옷장 (지금까지 기록에서 수동/자동으로 등록된 옷 아이템, 페이지네이션). */
+export function listClothingItems(page = 0, size = 20): Promise<PagedResponse<ClothingItemResponse>> {
+  return apiFetch<PagedResponse<ClothingItemResponse>>(`/api/clothing-items?page=${page}&size=${size}`)
 }
 
 export function getClothingItem(id: number): Promise<ClothingItemResponse> {

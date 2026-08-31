@@ -17,12 +17,21 @@ export interface SignUpRequest {
   weight?: number
   waistInch?: number
   bodyType?: BodyType
-  preferredStyle?: StyleCategory
+  preferredStyles?: StyleCategory[]
 }
 
 export interface LoginRequest {
   email: string
   password: string
+}
+
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetConfirmRequest {
+  token: string
+  newPassword: string
 }
 
 export interface UserResponse {
@@ -33,7 +42,7 @@ export interface UserResponse {
   weight: number | null
   waistInch: number | null
   bodyType: BodyType | null
-  preferredStyle: StyleCategory | null
+  preferredStyles: StyleCategory[]
 }
 
 /** 마이페이지에서 신체 치수를 수정하는 요청. 필드를 비우면(undefined) 값이 지워진다. */
@@ -111,6 +120,12 @@ export interface EntryWeather {
   temp: number
   sky: string
   precipitation?: string
+}
+
+/** 목록 API의 페이지네이션 응답. 총 개수 대신 다음 페이지 존재 여부만 내려온다. */
+export interface PagedResponse<T> {
+  items: T[]
+  hasNext: boolean
 }
 
 /** 서버가 GlobalExceptionHandler에서 내려주는 에러 응답의 대략적 형태. */

@@ -3,6 +3,7 @@ package com.example.todaystyle.clothing;
 import com.example.todaystyle.clothing.dto.ClothingItemResponse;
 import com.example.todaystyle.clothing.dto.CreateClothingItemRequest;
 import com.example.todaystyle.clothing.dto.UpdateClothingItemRequest;
+import com.example.todaystyle.common.PageResponse;
 import com.example.todaystyle.ootd.OotdNotFoundException;
 import com.example.todaystyle.ootd.OotdRecord;
 import com.example.todaystyle.ootd.OotdRepository;
@@ -10,6 +11,8 @@ import com.example.todaystyle.recognition.DetectedClothingItem;
 import com.example.todaystyle.user.User;
 import com.example.todaystyle.user.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,10 +66,9 @@ public class ClothingItemService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClothingItemResponse> listMine(Long userId) {
-        return clothingItemRepository.findByUserIdWithOotd(userId).stream()
-                .map(ClothingItemResponse::from)
-                .toList();
+    public PageResponse<ClothingItemResponse> listMine(Long userId, Pageable pageable) {
+        Page<ClothingItem> page = clothingItemRepository.findByUserIdWithOotd(userId, pageable);
+        return PageResponse.of(page, ClothingItemResponse::from);
     }
 
     @Transactional(readOnly = true)

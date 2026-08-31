@@ -4,6 +4,6 @@ package com.example.todaystyle.security;
 public class UnauthenticatedException extends RuntimeException {
 
     public UnauthenticatedException() {
-        super("인증이 필요합니다.");
+        super("로그인이 필요합니다. 로그인 후 다시 시도해주세요.");
     }
 }
