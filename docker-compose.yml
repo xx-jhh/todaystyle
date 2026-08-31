@@ -1,0 +1,45 @@
+# 로컬 개발용. 운영(EC2)의 MariaDB 10.5와 버전을 맞춰서, "로컬에서는 되는데 운영에서는
+# 안 되는" 문제(예: 실제로 겪었던 콜레이션 이슈)를 배포 전에 미리 잡을 수 있게 한다.
+services:
+  db:
+    image: mariadb:10.5
+    environment:
+      MARIADB_DATABASE: todaystyle
+      MARIADB_USER: todaystyle_user
+      MARIADB_PASSWORD: ${DB_PASSWORD:-todaystyle_local}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-todaystyle_local}
+    # 호스트에 포트를 열지 않는다 — app 컨테이너는 도커 네트워크 안에서 host명 "db"로
+    # 바로 접근하므로 필요 없고, 로컬에 이미 떠 있는 MySQL(3306)과의 충돌도 피한다.
+    # DB 클라이언트로 직접 붙어봐야 하면 필요할 때만 `docker compose exec db mysql ...`.
+    volumes:
+      - todaystyle-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todaystyle
+      DB_USERNAME: todaystyle_user
+      DB_PASSWORD: ${DB_PASSWORD:-todaystyle_local}
+      JWT_SECRET: ${JWT_SECRET:-todaystyle-local-dev-secret-key-change-me-please-32bytes}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      KMA_SERVICE_KEY: ${KMA_SERVICE_KEY:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+
+volumes:
+  todaystyle-db-data:
