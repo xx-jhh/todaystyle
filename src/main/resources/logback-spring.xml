@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Spring Boot 기본 콘솔 로깅(springBoot.xml)은 그대로 유지하고, ERROR 알림 발송만 추가한다. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- application.yaml의 discord.webhook-url(= DISCORD_WEBHOOK_URL 환경변수)을 읽어온다.
+         미설정이면 빈 문자열이 되고, DiscordErrorAppender는 빈 값이면 아무 것도 하지 않는다. -->
+    <springProperty scope="context" name="discordWebhookUrl" source="discord.webhook-url"/>
+
+    <appender name="DISCORD_ERROR" class="com.example.todaystyle.common.logging.DiscordErrorAppender">
+        <webhookUrl>${discordWebhookUrl}</webhookUrl>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="DISCORD_ERROR"/>
+    </root>
+</configuration>

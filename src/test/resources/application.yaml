@@ -49,6 +49,9 @@ gemini:
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-flash-lite-latest}
 
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL:}
+
 app:
   base-url: ${APP_BASE_URL:http://localhost:5173}
   cors:

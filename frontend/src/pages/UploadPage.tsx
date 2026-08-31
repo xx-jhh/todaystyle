@@ -6,6 +6,7 @@ import { uploadOotd } from '../api/ootd'
 import { getWeather } from '../api/weather'
 import type { EntryWeather } from '../api/types'
 import { WeatherBadge } from '../components/WeatherBadge'
+import { compressImage } from '../lib/compressImage'
 import { formatLongDate, todayIso } from '../lib/format'
 
 const FALLBACK = { lat: 37.5665, lon: 126.978 }
@@ -53,12 +54,14 @@ export function UploadPage() {
     }
   }, [preview])
 
-  function pickFile(f: File | undefined) {
+  async function pickFile(f: File | undefined) {
     if (!f) return
-    if (preview) URL.revokeObjectURL(preview)
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
     setError(null)
+    // 폰 원본 사진은 수 MB라 업로드 전에 리사이즈+재인코딩해 크기를 줄인다(실패하면 원본 그대로).
+    const compressed = await compressImage(f)
+    if (preview) URL.revokeObjectURL(preview)
+    setFile(compressed)
+    setPreview(URL.createObjectURL(compressed))
   }
 
   async function handleSubmit() {
@@ -130,7 +133,7 @@ export function UploadPage() {
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => pickFile(e.target.files?.[0])}
+        onChange={(e) => void pickFile(e.target.files?.[0])}
       />
 
       {error && <p className="mt-3 text-center text-sm text-red-500">{error}</p>}
