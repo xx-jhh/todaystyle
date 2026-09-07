@@ -44,17 +44,21 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /** 사용자 id와 발급시각. 발급시각은 비밀번호 재설정 이후 발급된 토큰인지 판단하는 데 쓰인다. */
+    public record TokenClaims(Long userId, Date issuedAt) {
+    }
+
     /**
-     * 토큰이 유효하면 사용자 id를 반환하고, 위조/만료 등으로 유효하지 않으면 null을 반환한다.
+     * 토큰이 유효하면(서명/만료) claims를 반환하고, 위조/만료 등으로 유효하지 않으면 null을 반환한다.
      */
-    public Long parseUserId(String token) {
+    public TokenClaims parseClaims(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            return Long.valueOf(claims.getSubject());
+            return new TokenClaims(Long.valueOf(claims.getSubject()), claims.getIssuedAt());
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }

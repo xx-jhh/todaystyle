@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 
 import com.example.todaystyle.security.JwtTokenProvider;
 import com.example.todaystyle.user.dto.LoginRequest;
+import com.example.todaystyle.user.dto.PasswordResetConfirmRequest;
 import com.example.todaystyle.user.dto.SignUpRequest;
 import com.example.todaystyle.user.dto.TokenResponse;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +77,7 @@ class AuthServiceTest {
         verify(userRepository).save(savedUser.capture());
         assertThat(savedUser.getValue().getPassword()).isEqualTo("encoded-password");
         assertThat(savedUser.getValue().getEmail()).isEqualTo("new@todaystyle.com");
+        assertThat(savedUser.getValue().getPasswordChangedAt()).isNotNull();
         assertThat(response.accessToken()).isEqualTo("jwt-token");
         assertThat(response.tokenType()).isEqualTo("Bearer");
     }
@@ -118,5 +121,25 @@ class AuthServiceTest {
 
         assertThat(response.accessToken()).isEqualTo("jwt-token");
         verify(tokenProvider).createToken(1L, "user@todaystyle.com");
+    }
+
+    @Test
+    void 비밀번호_재설정에_성공하면_passwordChangedAt이_갱신된다() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@todaystyle.com");
+        LocalDateTime beforeReset = LocalDateTime.now().minusDays(1);
+        user.setPasswordChangedAt(beforeReset);
+
+        PasswordResetToken resetToken = new PasswordResetToken(1L, "reset-token", LocalDateTime.now().plusMinutes(30));
+        when(resetTokenRepository.findByToken("reset-token")).thenReturn(Optional.of(resetToken));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("newPassword123")).thenReturn("encoded-new-password");
+
+        authService.confirmPasswordReset(new PasswordResetConfirmRequest("reset-token", "newPassword123"));
+
+        assertThat(user.getPassword()).isEqualTo("encoded-new-password");
+        assertThat(user.getPasswordChangedAt()).isAfter(beforeReset);
+        assertThat(resetToken.isUsed()).isTrue();
     }
 }

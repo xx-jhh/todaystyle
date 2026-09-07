@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.todaystyle.clothing.ClothingItemRepository;
 import com.example.todaystyle.common.storage.ImageStorageService;
+import com.example.todaystyle.common.storage.UploadedImage;
 import com.example.todaystyle.ootd.dto.OotdResponse;
 import com.example.todaystyle.user.UserRepository;
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -105,7 +107,7 @@ class OotdServiceTest {
         MultipartFile image = new MockMultipartFile("image", "photo.jpg", "image/jpeg", JPEG_MAGIC_BYTES);
         when(ootdRepository.existsByUserIdAndRecordDate(USER_ID, RECORD_DATE)).thenReturn(false);
         when(imageStorageService.upload(any(byte[].class), eq("todaystyle/ootd/" + USER_ID)))
-                .thenReturn("https://cdn.example.com/photo.jpg");
+                .thenReturn(new UploadedImage("https://cdn.example.com/photo.jpg", "todaystyle/ootd/1/photo"));
         when(ootdRepository.save(any(OotdRecord.class))).thenAnswer(invocation -> {
             OotdRecord saved = invocation.getArgument(0);
             saved.setId(42L);
@@ -125,6 +127,22 @@ class OotdServiceTest {
         assertThat(event.lat()).isEqualTo(37.5665);
         assertThat(event.lon()).isEqualTo(126.978);
         assertThat(event.imageContentType()).isEqualTo("image/jpeg");
+    }
+
+    @Test
+    void 동시_업로드로_DB_유니크_제약에_걸리면_방금_올린_이미지를_지우고_409로_변환한다() {
+        MultipartFile image = new MockMultipartFile("image", "photo.jpg", "image/jpeg", JPEG_MAGIC_BYTES);
+        when(ootdRepository.existsByUserIdAndRecordDate(USER_ID, RECORD_DATE)).thenReturn(false);
+        when(imageStorageService.upload(any(byte[].class), eq("todaystyle/ootd/" + USER_ID)))
+                .thenReturn(new UploadedImage("https://cdn.example.com/photo.jpg", "todaystyle/ootd/1/photo"));
+        when(ootdRepository.save(any(OotdRecord.class)))
+                .thenThrow(new DataIntegrityViolationException("unique constraint violated"));
+
+        assertThatThrownBy(() -> ootdService.upload(USER_ID, RECORD_DATE, image, null, null))
+                .isInstanceOf(OotdAlreadyExistsException.class);
+
+        verify(imageStorageService).delete("todaystyle/ootd/1/photo");
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

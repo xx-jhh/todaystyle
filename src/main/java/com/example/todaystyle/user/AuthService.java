@@ -50,6 +50,7 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPasswordChangedAt(LocalDateTime.now());
         user.setNickname(request.nickname());
         user.setHeight(request.height());
         user.setWeight(request.weight());
@@ -103,6 +104,8 @@ public class AuthService {
         User user = userRepository.findById(resetToken.getUserId())
                 .orElseThrow(InvalidResetTokenException::new);
         user.setPassword(passwordEncoder.encode(request.newPassword()));
+        // 재설정 이전에 발급된 JWT(탈취된 세션 포함)를 여기서 전부 무효화한다.
+        user.setPasswordChangedAt(LocalDateTime.now());
         resetToken.setUsed(true);
     }
 

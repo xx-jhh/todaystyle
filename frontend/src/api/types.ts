@@ -94,9 +94,10 @@ export interface UpdateClothingItemRequest {
   fit?: Fit
 }
 
+/** 상의×하의 페어뿐 아니라 원피스×아우터 페어도 올 수 있어, 실제 카테고리는 각 아이템의 category로 판별한다. */
 export interface CombinationResponse {
-  top: ClothingItemResponse
-  bottom: ClothingItemResponse
+  primaryItem: ClothingItemResponse
+  secondaryItem: ClothingItemResponse
   score: number
   reason: string
 }

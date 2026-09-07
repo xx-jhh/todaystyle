@@ -19,9 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 코디 조합 추천의 핵심 로직. 서로 다른 OOTD(=다른 날짜)에서 나온 상의와 하의 중
- * 실제로 함께 입은 적 없는 페어를 색상 조합·체형별 핏·선호 스타일별 핏으로 점수화해 추천한다.
- * 초기에는 규칙 기반이며, 데이터가 쌓이면 임베딩 유사도로 고도화한다.
+ * 코디 조합 추천의 핵심 로직. 서로 다른 OOTD(=다른 날짜)에서 나온 두 아이템 중 실제로 함께
+ * 입은 적 없는 페어를 색상 조합·체형별 핏·선호 스타일별 핏으로 점수화해 추천한다. 상의×하의뿐
+ * 아니라 원피스×아우터도 같은 방식으로 채점한다 — 원피스 위주로 옷장을 채우는 사용자는
+ * 상의/하의가 아예 없어서 예전엔 추천이 항상 빈 목록이었다. 초기에는 규칙 기반이며,
+ * 데이터가 쌓이면 임베딩 유사도로 고도화한다.
  */
 @Service
 public class CombinationRecommendationService {
@@ -48,43 +50,57 @@ public class CombinationRecommendationService {
         BodyType bodyType = user == null ? null : user.getBodyType();
         Set<StyleCategory> preferredStyles = user == null ? Set.of() : user.getPreferredStyles();
 
-        List<ClothingItem> tops =
-                clothingItemRepository.findByUserIdAndCategoryWithOotd(userId, ClothingCategory.TOP);
-        List<ClothingItem> bottoms =
-                clothingItemRepository.findByUserIdAndCategoryWithOotd(userId, ClothingCategory.BOTTOM);
+        List<ClothingItem> tops = itemsByCategory(userId, ClothingCategory.TOP);
+        List<ClothingItem> bottoms = itemsByCategory(userId, ClothingCategory.BOTTOM);
+        List<ClothingItem> dresses = itemsByCategory(userId, ClothingCategory.DRESS);
+        List<ClothingItem> outers = itemsByCategory(userId, ClothingCategory.OUTER);
 
         List<CombinationResponse> results = new ArrayList<>();
-        for (ClothingItem top : tops) {
-            for (ClothingItem bottom : bottoms) {
-                // 같은 OOTD(같은 날) 소속이면 이미 함께 입은 조합이므로 제외한다.
-                if (top.getOotdRecord().getId().equals(bottom.getOotdRecord().getId())) {
-                    continue;
-                }
-                results.add(score(top, bottom, bodyType, preferredStyles));
-            }
-        }
+        addCombos(results, tops, bottoms, bodyType, preferredStyles);
+        addCombos(results, dresses, outers, bodyType, preferredStyles);
 
         results.sort(Comparator.comparingDouble(CombinationResponse::score).reversed());
         return results.size() > limit ? results.subList(0, limit) : results;
     }
 
-    private CombinationResponse score(
-            ClothingItem top, ClothingItem bottom, BodyType bodyType, Set<StyleCategory> preferredStyles
+    private List<ClothingItem> itemsByCategory(Long userId, ClothingCategory category) {
+        return clothingItemRepository.findByUserIdAndCategoryWithOotd(userId, category);
+    }
+
+    private void addCombos(
+            List<CombinationResponse> results, List<ClothingItem> primaryItems, List<ClothingItem> secondaryItems,
+            BodyType bodyType, Set<StyleCategory> preferredStyles
     ) {
-        ColorHarmony.Result color = ColorHarmony.evaluate(top.getColor(), bottom.getColor());
+        for (ClothingItem primary : primaryItems) {
+            for (ClothingItem secondary : secondaryItems) {
+                // 같은 OOTD(같은 날) 소속이면 이미 함께 입은 조합이므로 제외한다.
+                if (primary.getOotdRecord().getId().equals(secondary.getOotdRecord().getId())) {
+                    continue;
+                }
+                results.add(score(primary, secondary, bodyType, preferredStyles));
+            }
+        }
+    }
+
+    private CombinationResponse score(
+            ClothingItem primary, ClothingItem secondary, BodyType bodyType, Set<StyleCategory> preferredStyles
+    ) {
+        ColorHarmony.Result color = ColorHarmony.evaluate(primary.getColor(), secondary.getColor());
         double bodyFitScore = fitScore(
-                top.getFit(), bottom.getFit(), bodyType != null, fit -> BodyTypeStyleRules.matches(bodyType, fit));
+                primary.getFit(), secondary.getFit(), bodyType != null,
+                fit -> BodyTypeStyleRules.matches(bodyType, fit));
         double styleFitScore = fitScore(
-                top.getFit(), bottom.getFit(), !preferredStyles.isEmpty(), fit -> matchesAnyStyle(preferredStyles, fit));
+                primary.getFit(), secondary.getFit(), !preferredStyles.isEmpty(),
+                fit -> matchesAnyStyle(preferredStyles, fit));
 
         double total = COLOR_WEIGHT * color.score()
                 + BODY_FIT_WEIGHT * bodyFitScore
                 + STYLE_FIT_WEIGHT * styleFitScore;
-        String reason = buildReason(color.label(), bodyType, preferredStyles, top.getFit(), bottom.getFit());
+        String reason = buildReason(color.label(), bodyType, preferredStyles, primary.getFit(), secondary.getFit());
 
         return new CombinationResponse(
-                ClothingItemResponse.from(top),
-                ClothingItemResponse.from(bottom),
+                ClothingItemResponse.from(primary),
+                ClothingItemResponse.from(secondary),
                 round2(total),
                 reason);
     }

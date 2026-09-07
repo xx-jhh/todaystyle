@@ -75,9 +75,9 @@ class CombinationRecommendationServiceTest {
         List<CombinationResponse> results = service.recommendCombos(USER_ID, 10);
 
         assertThat(results).hasSize(2);
-        assertThat(results.get(0).bottom().id()).isEqualTo(goodBottom.getId());
+        assertThat(results.get(0).secondaryItem().id()).isEqualTo(goodBottom.getId());
         assertThat(results.get(0).score()).isEqualTo(0.95);
-        assertThat(results.get(1).bottom().id()).isEqualTo(badBottom.getId());
+        assertThat(results.get(1).secondaryItem().id()).isEqualTo(badBottom.getId());
         assertThat(results.get(1).score()).isEqualTo(0.80);
     }
 
@@ -151,10 +151,51 @@ class CombinationRecommendationServiceTest {
         List<CombinationResponse> results = service.recommendCombos(USER_ID, 10);
 
         assertThat(results).hasSize(2);
-        assertThat(results.get(0).bottom().id()).isEqualTo(goodBottom.getId());
+        assertThat(results.get(0).secondaryItem().id()).isEqualTo(goodBottom.getId());
         assertThat(results.get(0).score()).isEqualTo(0.80);
-        assertThat(results.get(1).bottom().id()).isEqualTo(badBottom.getId());
+        assertThat(results.get(1).secondaryItem().id()).isEqualTo(badBottom.getId());
         assertThat(results.get(1).score()).isEqualTo(0.74);
+    }
+
+    @Test
+    void 원피스와_아우터도_상하의와_같은_방식으로_조합_추천에_포함된다() {
+        User user = user(BodyType.STRAIGHT, StyleCategory.CASUAL);
+        OotdRecord dressDay = ootd(301L, LocalDate.of(2026, 8, 10));
+        OotdRecord outerDay = ootd(302L, LocalDate.of(2026, 8, 11));
+        ClothingItem dress = item(user, dressDay, ClothingCategory.DRESS, "#FF0000", Fit.REGULAR);
+        ClothingItem outer = item(user, outerDay, ClothingCategory.OUTER, "#FF2B00", Fit.REGULAR);
+
+        givenUserAndItems(user, List.of(), List.of());
+        when(clothingItemRepository.findByUserIdAndCategoryWithOotd(eq(USER_ID), eq(ClothingCategory.DRESS)))
+                .thenReturn(List.of(dress));
+        when(clothingItemRepository.findByUserIdAndCategoryWithOotd(eq(USER_ID), eq(ClothingCategory.OUTER)))
+                .thenReturn(List.of(outer));
+
+        List<CombinationResponse> results = service.recommendCombos(USER_ID, 10);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).primaryItem().id()).isEqualTo(dress.getId());
+        assertThat(results.get(0).secondaryItem().id()).isEqualTo(outer.getId());
+        assertThat(results.get(0).primaryItem().category()).isEqualTo(ClothingCategory.DRESS);
+        assertThat(results.get(0).secondaryItem().category()).isEqualTo(ClothingCategory.OUTER);
+    }
+
+    @Test
+    void 같은_OOTD에_속한_원피스와_아우터_조합은_추천에서_제외한다() {
+        User user = user(BodyType.STRAIGHT, StyleCategory.CASUAL);
+        OotdRecord sameDay = ootd(401L, LocalDate.of(2026, 8, 12));
+        ClothingItem dress = item(user, sameDay, ClothingCategory.DRESS, "#FF0000", Fit.REGULAR);
+        ClothingItem outer = item(user, sameDay, ClothingCategory.OUTER, "#00FFFF", Fit.REGULAR);
+
+        givenUserAndItems(user, List.of(), List.of());
+        when(clothingItemRepository.findByUserIdAndCategoryWithOotd(eq(USER_ID), eq(ClothingCategory.DRESS)))
+                .thenReturn(List.of(dress));
+        when(clothingItemRepository.findByUserIdAndCategoryWithOotd(eq(USER_ID), eq(ClothingCategory.OUTER)))
+                .thenReturn(List.of(outer));
+
+        List<CombinationResponse> results = service.recommendCombos(USER_ID, 10);
+
+        assertThat(results).isEmpty();
     }
 
     private void givenUserAndItems(User user, List<ClothingItem> tops, List<ClothingItem> bottoms) {
@@ -163,6 +204,8 @@ class CombinationRecommendationServiceTest {
                 .thenReturn(tops);
         when(clothingItemRepository.findByUserIdAndCategoryWithOotd(eq(USER_ID), eq(ClothingCategory.BOTTOM)))
                 .thenReturn(bottoms);
+        // DRESS/OUTER는 스텁하지 않으면 Mockito 기본 동작(List 반환 타입 → 빈 리스트)으로 처리돼
+        // 기존 상의×하의 전용 테스트들엔 영향이 없다.
     }
 
     private User user(BodyType bodyType, StyleCategory preferredStyle) {

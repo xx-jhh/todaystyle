@@ -3,6 +3,7 @@ package com.example.todaystyle.ootd;
 import com.example.todaystyle.clothing.ClothingItemRepository;
 import com.example.todaystyle.common.PageResponse;
 import com.example.todaystyle.common.storage.ImageStorageService;
+import com.example.todaystyle.common.storage.UploadedImage;
 import com.example.todaystyle.ootd.dto.OotdCountResponse;
 import com.example.todaystyle.ootd.dto.OotdResponse;
 import com.example.todaystyle.user.UserRepository;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,23 +51,35 @@ public class OotdService {
     public OotdResponse upload(Long userId, LocalDate recordDate, MultipartFile image, Double lat, Double lon) {
         validateImage(image);
 
+        // 여기서 미리 걸러두면 대부분의 경우 Cloudinary 업로드까지 안 가고 바로 끝난다.
+        // 다만 동시에 두 요청(더블클릭, 타임아웃 후 재시도 등)이 들어오면 이 체크를 둘 다
+        // 통과할 수 있어서, 최종 방어는 아래 DB 유니크 제약(user_id, record_date)이 한다.
         if (ootdRepository.existsByUserIdAndRecordDate(userId, recordDate)) {
             throw new OotdAlreadyExistsException(recordDate);
         }
 
         // 바이트를 먼저 한 번만 읽어서 Cloudinary 업로드와 비동기 보강 이벤트가 같은 배열을
-        // 공유한다 — MultipartFile을 그대로 두 번 읽는 낭비를 없애고, 바이트 읽기가 Cloudinary
-        // 호출보다 먼저 일어나므로 "업로드는 성공했는데 그다음 단계가 실패해서 저장소에 참조
-        // 없는 사진이 남는" 상황 자체가 생기지 않는다.
+        // 공유한다 — MultipartFile을 그대로 두 번 읽는 낭비를 없앤다.
         byte[] imageBytes = readBytes(image);
         validateImageSignature(imageBytes);
-        String photoUrl = imageStorageService.upload(imageBytes, "todaystyle/ootd/" + userId);
+        UploadedImage uploaded = imageStorageService.upload(imageBytes, "todaystyle/ootd/" + userId);
 
         OotdRecord record = new OotdRecord();
         record.setUser(userRepository.getReferenceById(userId));
         record.setRecordDate(recordDate);
-        record.setPhotoUrl(photoUrl);
-        OotdRecord saved = ootdRepository.save(record);
+        record.setPhotoUrl(uploaded.url());
+
+        OotdRecord saved;
+        try {
+            saved = ootdRepository.save(record);
+        } catch (DataIntegrityViolationException e) {
+            // 위 existsBy 체크를 두 요청이 동시에 통과해서 여기까지 왔을 때 DB 유니크 제약이
+            // 걸리는 경우. 이미 Cloudinary엔 이미지가 올라간 뒤라 그대로 두면 DB 어디에도
+            // 참조되지 않는 고아 이미지가 남으므로, 방금 올린 이미지를 지우고 사전 체크와
+            // 동일한 409 응답으로 통일한다(500으로 새 나가지 않게).
+            imageStorageService.delete(uploaded.publicId());
+            throw new OotdAlreadyExistsException(recordDate);
+        }
 
         eventPublisher.publishEvent(
                 new OotdUploadedEvent(saved.getId(), userId, lat, lon, imageBytes, image.getContentType()));

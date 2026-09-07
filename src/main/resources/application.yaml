@@ -48,6 +48,14 @@ spring:
       thread-name-prefix: ootd-enrich-
 
 server:
+  # nginx(리버스 프록시)가 X-Forwarded-For/X-Forwarded-Proto 헤더로 실제 클라이언트 IP와
+  # 프로토콜(https)을 넘겨주는데, 이 설정이 없으면 Spring이 그 헤더를 무시하고
+  # request.getRemoteAddr()가 항상 nginx가 붙는 127.0.0.1로만 찍힌다 — 그러면
+  # RateLimitInterceptor의 IP별 요청 제한이 사실상 전체 트래픽에 대해 하나로 뭉쳐진다.
+  # "framework"로 설정하면 Spring이 표준 X-Forwarded-* 헤더를 신뢰해 실제 클라이언트 IP를
+  # 복원한다. 8080 포트가 보안그룹에서 막혀있어 nginx를 거치지 않은 직접 요청이 불가능하므로,
+  # 이 헤더를 위조해서 들어올 경로가 없어 안전하게 켤 수 있다.
+  forward-headers-strategy: framework
   servlet:
     encoding:
       # JSON 스펙(RFC 8259)상 UTF-8이 기본이라 Spring이 Content-Type에 charset을 생략하는데,
@@ -64,8 +72,9 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET:}
 
 jwt:
-  # HS256 서명용 시크릿 (최소 32바이트). 운영에서는 환경변수로 주입할 것.
-  secret: ${JWT_SECRET:todaystyle-local-dev-secret-key-change-me-please-32bytes}
+  # HS256 서명용 시크릿 (최소 32바이트). 저장소에 기본값을 박아두면 공개 저장소를 본 누구나
+  # 그 값으로 토큰을 위조할 수 있어서, 기본값 없이 환경변수 필수로 강제한다(없으면 기동 실패).
+  secret: ${JWT_SECRET}
   # 액세스 토큰 만료 시간 (밀리초). 기본 24시간.
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 

@@ -55,7 +55,7 @@ export function RecommendationsPage() {
       {!loading && !error && combos.length > 0 && (
         <ul className="flex flex-col gap-3">
           {combos.map((combo) => (
-            <ComboCard key={`${combo.top.id}-${combo.bottom.id}`} combo={combo} />
+            <ComboCard key={`${combo.primaryItem.id}-${combo.secondaryItem.id}`} combo={combo} />
           ))}
         </ul>
       )}

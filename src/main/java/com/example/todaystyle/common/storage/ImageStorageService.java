@@ -11,11 +11,20 @@ package com.example.todaystyle.common.storage;
 public interface ImageStorageService {
 
     /**
-     * 이미지를 업로드하고 접근 가능한 URL을 반환한다.
+     * 이미지를 업로드하고 접근 가능한 URL(+삭제에 필요한 publicId)을 반환한다.
      *
      * @param imageBytes 업로드할 이미지 바이트
      * @param folder     저장소 내 폴더 경로 (예: "todaystyle/ootd/42")
-     * @return 저장된 이미지의 공개 URL
+     * @return 저장된 이미지의 공개 URL과 publicId
      */
-    String upload(byte[] imageBytes, String folder);
+    UploadedImage upload(byte[] imageBytes, String folder);
+
+    /**
+     * 업로드했지만 이후 단계(DB 저장 등)가 실패해서 더 이상 참조되지 않는 이미지를 정리한다.
+     * 이미 다른 에러를 처리하는 흐름 중에 호출되는 보상 동작이라, 삭제 자체가 실패해도
+     * 예외를 던지지 않고 내부에서 로그만 남긴다 — 원래 에러 응답을 가리면 안 되기 때문이다.
+     *
+     * @param publicId {@link #upload}가 반환한 {@link UploadedImage#publicId()}
+     */
+    void delete(String publicId);
 }

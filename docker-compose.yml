@@ -30,7 +30,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todaystyle
       DB_USERNAME: todaystyle_user
       DB_PASSWORD: ${DB_PASSWORD:-todaystyle_local}
-      JWT_SECRET: ${JWT_SECRET:-todaystyle-local-dev-secret-key-change-me-please-32bytes}
+      # 기본값을 박아두면 공개 저장소를 본 누구나 그 값으로 토큰을 위조할 수 있어서,
+      # .env에 직접 값을 넣도록 강제한다(없으면 docker compose가 바로 에러로 알려준다).
+      JWT_SECRET: "${JWT_SECRET:?.env에 JWT_SECRET을 설정하세요 (openssl rand -base64 32로 생성)}"
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       KMA_SERVICE_KEY: ${KMA_SERVICE_KEY:-}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}

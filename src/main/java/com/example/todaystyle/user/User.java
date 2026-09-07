@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -37,6 +38,15 @@ public class User extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String password;
+
+    /**
+     * 비밀번호가 마지막으로 바뀐 시각. 발급된 JWT의 iat(발급시각)가 이 값보다 이르면
+     * {@link com.example.todaystyle.security.JwtAuthenticationFilter}가 그 토큰을 무효 처리한다
+     * — 그렇지 않으면 비밀번호를 재설정해도 이미 발급된 토큰(탈취된 세션 등)이 만료 전까지
+     * 계속 유효하게 남는다.
+     */
+    @Column(nullable = false)
+    private LocalDateTime passwordChangedAt;
 
     @Column(nullable = false)
     private String nickname;
