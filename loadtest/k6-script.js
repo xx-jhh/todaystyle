@@ -58,6 +58,9 @@ export function setup() {
   const colors = ['#FF0000', '#0000FF', '#00FF00', '#FFFF00'];
   for (let i = 0; i < 4; i++) {
     const recordDate = daysAgo(i);
+    // lat/lon은 의도적으로 안 보낸다 — 보내면 서버가 비동기로 기상청 API를 실제 호출한다
+    // (OotdEnrichmentListener 참고). "더 실감나게" 좌표를 추가하고 싶어질 수 있는데, 그러면
+    // setup()을 돌릴 때마다 진짜 기상청 API를 호출하게 되니 하지 말 것.
     const uploadRes = http.post(
       `${BASE_URL}/api/ootd`,
       {

@@ -13,8 +13,16 @@ brew install k6   # 이미 설치돼 있으면 생략
 
 ```bash
 set -a; . ./.env; set +a
-docker compose up -d --build
+GEMINI_API_KEY= docker compose up -d --build
 ```
+
+`GEMINI_API_KEY=`로 비워서 넘기는 이유: OOTD를 업로드하면 서버가 비동기로 Gemini 자동인식을
+시도하는데(`OotdEnrichmentListener`), 이 스크립트는 이미 `/api/ootd/{id}/items`로 옷
+아이템을 수동 등록하고 있어서 Gemini 인식 결과가 테스트에 필요 없습니다. 키를 비워두면
+`RecognitionUnavailableException`으로 로컬에서 바로 스킵되고(설계상 best-effort라 앱
+동작엔 영향 없음), 실제 Gemini API가 호출되는 일 자체가 없어져서 무료 티어 소모나 비용
+걱정 없이 몇 번이고 돌릴 수 있습니다. `.env` 파일 자체는 건드리지 않으므로, 이 명령
+말고 평소 `./gradlew bootRun`으로 개발할 때는 그대로 Gemini가 정상 동작합니다.
 
 - 앱: http://localhost:8080
 - Grafana: http://localhost:3000 (로그인 없이 바로 보임 — 로컬 전용 익명 접근 설정)
@@ -45,9 +53,13 @@ K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=loadtest/report.html \
   5회로 막아두고 있어서, 그대로 반복 요청하면 실제 부하가 아니라 429만 재게 됩니다.
   그래서 `setup()`에서 딱 한 번만 회원가입하고, 실제 부하는 인증만 필요한 조회
   API(`GET /api/ootd`, `GET /api/recommendations/combos`)에만 겁니다.
-- **Cloudinary/Gemini API도 반복 호출 안 합니다.** 둘 다 무료 티어라 한도가 있어서,
-  `setup()`에서 OOTD 4장 + 옷 아이템 몇 개만 미리 만들어두고(1회성), 반복 구간에서는
-  DB 읽기 + 추천 점수 계산(CPU)만 겁니다.
+- **Cloudinary/Gemini/기상청 API도 반복 호출 안 합니다.** 전부 무료 티어라 한도/비용
+  걱정이 있어서, `setup()`에서 OOTD 4장 + 옷 아이템 몇 개만 미리 만들어두고(1회성), 반복
+  구간(다수 VU)에서는 DB 읽기 + 추천 점수 계산(CPU)만 겁니다. 그 1회성 시딩 안에서도:
+  Cloudinary는 사진 저장 자체가 핵심 기능이라 어쩔 수 없이 4번 호출되지만(무료 티어 여유
+  있음), **Gemini는 `GEMINI_API_KEY=`로 비워서 완전히 0번 호출**되게 했고(수동 태깅으로
+  이미 데이터를 채우니 없어도 됨), **기상청 API는 업로드 시 lat/lon을 아예 안 보내서
+  처음부터 0번**입니다.
 - **메트릭은 별도 포트(9090)**로 분리했습니다(`application.yaml`의
   `management.server.port`). 메인 앱 포트(8080, nginx가 붙는 포트)와 완전히 분리돼 있어서,
   실수로 `/actuator/**`가 공개 인터넷에 노출될 걱정이 없습니다.
