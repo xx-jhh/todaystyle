@@ -64,6 +64,27 @@ server:
       charset: UTF-8
       force: true
 
+# Prometheus/Grafana용 메트릭. 메인 앱 포트(8080, nginx가 프록시)와 분리된 별도 포트로 띄운다
+# — Spring Boot는 management.server.port가 설정되면 이 엔드포인트들을 메인 SecurityFilterChain이
+# 전혀 안 걸리는 별도 내장 서버로 분리한다. EC2 보안그룹은 80/443/22만 열려 있어 9090은
+# 애초에 외부에서 접근 불가능하고, 로컬/도커 네트워크 안에서만(Prometheus 컨테이너 등) 닿는다.
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  health:
+    # 메일은 이 앱에서 원래 선택 기능(재설정 메일 실패해도 로그만 남기고 서비스는 정상 동작,
+    # AuthService 참고) — 헬스체크까지 SMTP 상태에 발목 잡히면 진짜 다운이 아닌데 DOWN으로
+    # 나와서 모니터링 신호가 왜곡된다.
+    mail:
+      enabled: false
+
 cloudinary:
   # 이미지 저장소. 아직 미발급 상태여도 앱은 정상 부팅되며, 실제 업로드 시점에만 필요.
   # 운영/배포 시 환경변수(CLOUDINARY_CLOUD_NAME 등)로 주입할 것.

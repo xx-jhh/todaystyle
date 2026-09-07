@@ -24,6 +24,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // 부하테스트 중 JVM/HikariCP/요청 지연 등을 Prometheus+Grafana로 실시간으로 보기 위한 메트릭.
+    // management.server.port(별도 포트)로 분리해서, 메인 앱 포트(nginx가 물고 있는 8080)와
+    // 완전히 분리된 채로만 노출한다 — /actuator/** 가 공개 인터넷에 그대로 열리는 걸 방지.
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'

@@ -1,0 +1,11 @@
+# Grafana가 뜨자마자 Prometheus 데이터소스를 자동으로 등록하도록 한다 — 로컬에서
+# 매번 UI로 수동 설정할 필요 없게.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true

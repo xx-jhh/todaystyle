@@ -1,0 +1,10 @@
+# app 컨테이너의 management 포트(9090, application.yaml 참고)를 도커 네트워크 안에서
+# 직접 스크래핑한다. nginx나 EC2 보안그룹을 거치지 않으므로 이 포트를 따로 열 필요가 없다.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: todaystyle-app
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['app:9090']

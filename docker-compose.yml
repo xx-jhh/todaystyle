@@ -26,6 +26,9 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+      # Actuator/Prometheus 메트릭(별도 포트, application.yaml의 management.server.port).
+      # 127.0.0.1로만 바인딩해서 이 머신 밖에서는 접근 못 하게 한다.
+      - "127.0.0.1:9090:9090"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todaystyle
       DB_USERNAME: todaystyle_user
@@ -43,6 +46,33 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+
+  # 부하테스트(loadtest/) 중 app의 실시간 상태(요청 지연, HikariCP, JVM)를 그래프로 보기 위한
+  # 모니터링 스택. 로컬 전용 — 운영 배포(deploy.sh)는 이 파일이 아니라 app 컨테이너 하나만
+  # 단독 실행하므로 이 두 서비스와 무관하다.
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9091:9090"
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      # 로컬 전용 편의 설정 — 매번 로그인하지 않아도 바로 대시보드가 보이게.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
 
 volumes:
   todaystyle-db-data:

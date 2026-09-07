@@ -1,0 +1,79 @@
+{
+  "title": "todaystyle - app metrics",
+  "uid": "todaystyle-app",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "title": "Requests/sec by endpoint",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (uri) (rate(http_server_requests_seconds_count[1m]))",
+          "legendFormat": "{{uri}}"
+        }
+      ]
+    },
+    {
+      "title": "p95 response time (s) by endpoint",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (uri, le) (rate(http_server_requests_seconds_bucket[1m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ]
+    },
+    {
+      "title": "5xx error rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx/s"
+        }
+      ]
+    },
+    {
+      "title": "HikariCP connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "hikaricp_connections_active", "legendFormat": "active" },
+        { "expr": "hikaricp_connections_idle", "legendFormat": "idle" },
+        { "expr": "hikaricp_connections_max", "legendFormat": "max" }
+      ]
+    },
+    {
+      "title": "JVM heap used (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / 1024 / 1024",
+          "legendFormat": "heap used"
+        }
+      ]
+    },
+    {
+      "title": "Process CPU usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "process_cpu_usage", "legendFormat": "cpu" }
+      ]
+    }
+  ]
+}
