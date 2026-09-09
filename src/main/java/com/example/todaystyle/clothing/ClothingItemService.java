@@ -71,6 +71,16 @@ public class ClothingItemService {
         return PageResponse.of(page, ClothingItemResponse::from);
     }
 
+    /** 특정 OOTD 기록에 태깅된 옷 아이템 목록 (수동 태깅 화면에서 이미 등록된 것들을 먼저 보여줄 때 사용). */
+    @Transactional(readOnly = true)
+    public List<ClothingItemResponse> listByOotd(Long userId, Long ootdRecordId) {
+        ootdRepository.findByIdAndUserId(ootdRecordId, userId)
+                .orElseThrow(() -> new OotdNotFoundException(ootdRecordId));
+        return clothingItemRepository.findByOotdRecordIdAndUserIdWithOotd(ootdRecordId, userId).stream()
+                .map(ClothingItemResponse::from)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public ClothingItemResponse get(Long userId, Long itemId) {
         ClothingItem item = clothingItemRepository.findByIdAndUserIdWithOotd(itemId, userId)

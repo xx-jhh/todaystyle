@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Pencil, Sparkles, Trash2 } from 'lucide-react'
+import { ChevronLeft, Pencil, Plus, Shirt, Sparkles, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
+import { createOotdItem, listOotdItems } from '../api/clothing'
 import { deleteOotd, getOotd, updateOotdMemo } from '../api/ootd'
-import type { DiaryEntry } from '../api/types'
+import type { ClothingCategory, ClothingItemResponse, DiaryEntry, Fit } from '../api/types'
+import { ClothingItemCard } from '../components/ClothingItemCard'
 import { WeatherBadge } from '../components/WeatherBadge'
+import { CLOTHING_CATEGORY_LABELS, CLOTHING_CATEGORY_ORDER, FIT_LABELS } from '../data/clothingLabels'
 import { formatLongDate } from '../lib/format'
+
+const FIT_ORDER: Fit[] = ['SLIM', 'REGULAR', 'LOOSE', 'OVERSIZED']
+const DEFAULT_COLOR = '#808080'
 
 export function DetailPage() {
   const { id } = useParams()
@@ -23,6 +29,16 @@ export function DetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  const [items, setItems] = useState<ClothingItemResponse[]>([])
+  const [itemsLoading, setItemsLoading] = useState(true)
+
+  const [addingItem, setAddingItem] = useState(false)
+  const [newCategory, setNewCategory] = useState<ClothingCategory>('TOP')
+  const [newColor, setNewColor] = useState(DEFAULT_COLOR)
+  const [newFit, setNewFit] = useState<Fit | ''>('')
+  const [addSaving, setAddSaving] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
   useEffect(() => {
     let cancelled = false
     getOotd(Number(id))
@@ -37,10 +53,47 @@ export function DetailPage() {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+    listOotdItems(Number(id))
+      .then((data) => {
+        if (!cancelled) setItems(data)
+      })
+      .catch(() => {
+        // 옷 아이템 목록은 부가 정보라 실패해도 사진/메모는 그대로 보여준다.
+      })
+      .finally(() => {
+        if (!cancelled) setItemsLoading(false)
+      })
     return () => {
       cancelled = true
     }
   }, [id])
+
+  function startAddingItem() {
+    setNewCategory('TOP')
+    setNewColor(DEFAULT_COLOR)
+    setNewFit('')
+    setAddError(null)
+    setAddingItem(true)
+  }
+
+  async function saveNewItem() {
+    if (!entry) return
+    setAddSaving(true)
+    setAddError(null)
+    try {
+      const created = await createOotdItem(entry.id, {
+        category: newCategory,
+        color: newColor,
+        fit: newFit || undefined,
+      })
+      setItems((prev) => [...prev, created])
+      setAddingItem(false)
+    } catch (err) {
+      setAddError(err instanceof ApiError ? err.message : '옷 추가에 실패했습니다.')
+    } finally {
+      setAddSaving(false)
+    }
+  }
 
   function startEditing() {
     setMemoDraft(entry?.memo ?? '')
@@ -208,9 +261,119 @@ export function DetailPage() {
                 </p>
               )}
             </div>
+
+            <div className="mt-4 rounded-2xl border border-line bg-paper p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+                  <Shirt size={16} /> 태깅된 옷
+                  {!itemsLoading && <span className="font-normal text-ink-soft">{items.length}</span>}
+                </div>
+                {!addingItem && (
+                  <button
+                    type="button"
+                    onClick={startAddingItem}
+                    aria-label="옷 추가"
+                    className="grid h-7 w-7 place-items-center rounded-full text-ink-soft hover:bg-canvas"
+                  >
+                    <Plus size={16} strokeWidth={1.75} />
+                  </button>
+                )}
+              </div>
+
+              {itemsLoading && <p className="mt-2 text-sm text-ink-soft">불러오는 중…</p>}
+
+              {!itemsLoading && items.length === 0 && !addingItem && (
+                <p className="mt-2 text-sm text-ink-soft">
+                  아직 태깅된 옷이 없어요. 자동 인식이 실패했다면 직접 추가해보세요.
+                </p>
+              )}
+
+              {items.length > 0 && (
+                <ul className="mt-3 grid grid-cols-3 gap-2.5">
+                  {items.map((item) => (
+                    <ClothingItemCard key={item.id} item={item} />
+                  ))}
+                </ul>
+              )}
+
+              {addingItem && (
+                <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+                  <Field label="카테고리">
+                    <select
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as ClothingCategory)}
+                      className="input"
+                    >
+                      {CLOTHING_CATEGORY_ORDER.map((c) => (
+                        <option key={c} value={c}>
+                          {CLOTHING_CATEGORY_LABELS[c]}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="핏">
+                    <select
+                      value={newFit}
+                      onChange={(e) => setNewFit(e.target.value as Fit | '')}
+                      className="input"
+                    >
+                      <option value="">선택 안 함</option>
+                      {FIT_ORDER.map((f) => (
+                        <option key={f} value={f}>
+                          {FIT_LABELS[f]}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="색상">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={newColor}
+                        onChange={(e) => setNewColor(e.target.value)}
+                        className="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-line bg-white p-1"
+                      />
+                      <span className="text-sm text-ink-soft">{newColor.toUpperCase()}</span>
+                    </div>
+                  </Field>
+
+                  {addError && <p className="text-sm text-red-500">{addError}</p>}
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAddingItem(false)}
+                      disabled={addSaving}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-canvas disabled:opacity-60"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveNewItem}
+                      disabled={addSaving}
+                      className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {addSaving ? '추가하는 중…' : '추가'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </article>
       )}
     </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-sm text-ink-soft">{label}</span>
+      {children}
+    </label>
   )
 }

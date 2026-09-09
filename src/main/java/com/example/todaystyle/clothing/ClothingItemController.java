@@ -5,6 +5,7 @@ import com.example.todaystyle.clothing.dto.CreateClothingItemRequest;
 import com.example.todaystyle.clothing.dto.UpdateClothingItemRequest;
 import com.example.todaystyle.common.PageResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,15 @@ public class ClothingItemController {
     ) {
         ClothingItemResponse response = clothingItemService.addToOotd(userId, ootdId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /** 특정 OOTD 기록에 태깅된 옷 아이템 목록 (수동 태깅 화면에서 이미 등록된 것을 먼저 보여줄 때 사용). */
+    @GetMapping("/api/ootd/{ootdId}/items")
+    public List<ClothingItemResponse> listByOotd(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long ootdId
+    ) {
+        return clothingItemService.listByOotd(userId, ootdId);
     }
 
     /** 내 옷장 (등록된 모든 아이템, 페이지네이션). */

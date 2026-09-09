@@ -29,6 +29,13 @@ public interface ClothingItemRepository extends JpaRepository<ClothingItem, Long
             @Param("userId") Long userId,
             @Param("category") ClothingCategory category);
 
+    /** 특정 OOTD 기록에 이미 태깅된 내 옷 아이템들 (수동 태깅 화면에서 중복 등록을 막기 위해 먼저 보여줌). */
+    @Query("select ci from ClothingItem ci join fetch ci.ootdRecord "
+            + "where ci.ootdRecord.id = :ootdRecordId and ci.user.id = :userId order by ci.id asc")
+    List<ClothingItem> findByOotdRecordIdAndUserIdWithOotd(
+            @Param("ootdRecordId") Long ootdRecordId,
+            @Param("userId") Long userId);
+
     /** OOTD 삭제 시 그 안에서 추출된 옷 아이템도 함께 지운다(FK 제약 때문에 먼저 지워야 함). */
     void deleteByOotdRecordId(Long ootdRecordId);
 }
